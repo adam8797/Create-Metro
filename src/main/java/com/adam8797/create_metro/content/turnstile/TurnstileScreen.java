@@ -1,18 +1,14 @@
 package com.adam8797.create_metro.content.turnstile;
 
 import com.adam8797.create_metro.config.MetroServerConfig;
-import dev.ithundxr.createnumismatics.content.bank.CardItem;
-import dev.ithundxr.createnumismatics.util.UsernameUtils;
 import net.createmod.catnip.platform.CatnipServices;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.item.ItemStack;
-
-import java.util.UUID;
 
 public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
 
@@ -24,26 +20,33 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
     private static final int TEXT = 0x404040;
 
     private int editFare;
+    private boolean chargeTrusted;
 
     public TurnstileScreen(TurnstileMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
         this.imageWidth = 176;
-        this.imageHeight = 192;
+        this.imageHeight = 210;
         this.titleLabelY = 6;
-        this.inventoryLabelY = 98;
+        this.inventoryLabelY = 116;
     }
 
     @Override
     protected void init() {
         super.init();
         editFare = menu.contentHolder != null ? menu.contentHolder.getFare() : 0;
+        chargeTrusted = menu.contentHolder != null && menu.contentHolder.getChargeTrusted();
 
         int x = leftPos;
         int y = topPos;
         addRenderableWidget(Button.builder(Component.literal("-"), b -> adjustFare(-step()))
-                .bounds(x + 8, y + 32, 20, 20).build());
+                .bounds(x + 8, y + 30, 20, 20).build());
         addRenderableWidget(Button.builder(Component.literal("+"), b -> adjustFare(step()))
-                .bounds(x + 60, y + 32, 20, 20).build());
+                .bounds(x + 84, y + 30, 20, 20).build());
+        addRenderableWidget(Checkbox.builder(Component.translatable("create_metro.turnstile.charge_trusted"), font)
+                .pos(x + 8, y + 54)
+                .selected(chargeTrusted)
+                .onValueChange((cb, value) -> chargeTrusted = value)
+                .build());
     }
 
     private static int step() {
@@ -64,23 +67,19 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
 
         g.fill(x, y, x + imageWidth, y + imageHeight, PANEL);
         g.fill(x, y, x + imageWidth, y + 18, TITLE_BAR);
-        // thin outer frame
         g.fill(x, y, x + imageWidth, y + 1, BORDER);
         g.fill(x, y + imageHeight - 1, x + imageWidth, y + imageHeight, BORDER);
         g.fill(x, y, x + 1, y + imageHeight, BORDER);
         g.fill(x + imageWidth - 1, y, x + imageWidth, y + imageHeight, BORDER);
 
-        // deposit-account slot
-        slot(g, x + 150, y + 34);
-        // free-pass rider (ID card) slots
+        slot(g, x + 150, y + 30);
         for (int i = 0; i < TurnstileMenu.ID_SLOT_COUNT; i++)
-            slot(g, x + 8 + i * 18, y + 70);
-        // player inventory
+            slot(g, x + 8 + i * 18, y + 90);
         for (int row = 0; row < 3; row++)
             for (int col = 0; col < 9; col++)
-                slot(g, x + 8 + col * 18, y + 108 + row * 18);
+                slot(g, x + 8 + col * 18, y + 128 + row * 18);
         for (int col = 0; col < 9; col++)
-            slot(g, x + 8 + col * 18, y + 166);
+            slot(g, x + 8 + col * 18, y + 186);
     }
 
     private void slot(GuiGraphics g, int itemX, int itemY) {
@@ -93,29 +92,11 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
         g.drawString(font, title, titleLabelX, titleLabelY, 0xFFFFFF, false);
         g.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, TEXT, false);
 
-        // fare
-        g.drawString(font, Component.translatable("create_metro.turnstile.fare"), 8, 22, TEXT, false);
-        g.drawCenteredString(font, Component.translatable("create_metro.turnstile.fare_amount", editFare), 44, 38, 0xFFFFFF);
+        g.drawString(font, Component.translatable("create_metro.turnstile.fare"), 8, 20, TEXT, false);
+        g.drawCenteredString(font, Component.translatable("create_metro.turnstile.fare_amount", editFare), 56, 36, 0xFFFFFF);
 
-        // deposit account
-        g.drawString(font, Component.translatable("create_metro.turnstile.deposit_label"), 96, 22, TEXT, false);
-        g.drawString(font, depositName(), 96, 40, TEXT, false);
-
-        // free-pass riders
-        g.drawString(font, Component.translatable("create_metro.turnstile.riders_label"), 8, 60, TEXT, false);
-    }
-
-    private Component depositName() {
-        ItemStack card = menu.getSlot(TurnstileMenu.CARD_SLOT).getItem();
-        if (!card.isEmpty()) {
-            String name = CardItem.getPlayerName(card);
-            return name != null ? Component.literal(name)
-                    : Component.translatable("create_metro.turnstile.deposit_linked");
-        }
-        UUID owner = menu.contentHolder != null ? menu.contentHolder.getOwner() : null;
-        String ownerName = owner != null ? UsernameUtils.INSTANCE.getName(owner, null) : null;
-        return ownerName != null ? Component.literal(ownerName)
-                : Component.translatable("create_metro.turnstile.deposit_personal");
+        g.drawString(font, Component.translatable("create_metro.turnstile.deposit_label"), 110, 20, TEXT, false);
+        g.drawString(font, Component.translatable("create_metro.turnstile.riders_label"), 8, 78, TEXT, false);
     }
 
     @Override
@@ -130,6 +111,6 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
         super.removed();
         if (menu.contentHolder != null)
             CatnipServices.NETWORK.sendToServer(
-                    new TurnstileConfigurationPacket(menu.contentHolder.getBlockPos(), editFare));
+                    new TurnstileConfigurationPacket(menu.contentHolder.getBlockPos(), editFare, chargeTrusted));
     }
 }

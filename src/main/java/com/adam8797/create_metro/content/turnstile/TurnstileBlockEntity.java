@@ -65,6 +65,9 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
 
     protected ScrollValueBehaviour fare;
 
+    /** When true, even the owner and trusted riders are charged (useful for testing or paid staff). */
+    protected boolean chargeTrusted = false;
+
     /**
      * Holds the (optional) bank card whose account collected fares are deposited into.
      * When empty, fares default to the owner's personal account.
@@ -120,6 +123,15 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     @Nullable
     public UUID getOwner() {
         return owner;
+    }
+
+    public boolean getChargeTrusted() {
+        return chargeTrusted;
+    }
+
+    public void setChargeTrusted(boolean value) {
+        this.chargeTrusted = value;
+        notifyUpdate();
     }
 
     @Override
@@ -208,7 +220,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             openGate(false);
             return;
         }
-        if (isTrusted(player)) {
+        if (!chargeTrusted && isTrusted(player)) {
             openGate(false);
             immunityUntil.put(id, now + IMMUNITY_TICKS);
             return;
@@ -282,6 +294,11 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
 
     /** Open the gate; {@code reversed} swings the leaf against the facing (used for free egress). */
     private void openGate(boolean reversed) {
+        openGate(reversed, true);
+    }
+
+    /** {@code propagate} also opens merged neighbours, so a double gate swings as one unit. */
+    private void openGate(boolean reversed, boolean propagate) {
         if (level == null)
             return;
         BlockState state = getBlockState();
@@ -291,6 +308,19 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         level.playSound(null, worldPosition, SoundEvents.ARROW_HIT_PLAYER, SoundSource.BLOCKS, 0.6f, 1.2f);
         if (!level.getBlockTicks().hasScheduledTick(worldPosition, state.getBlock()))
             level.scheduleTick(worldPosition, state.getBlock(), OPEN_DURATION);
+
+        if (propagate) {
+            Direction facing = state.getValue(TurnstileBlock.HORIZONTAL_FACING);
+            if (state.getValue(TurnstileBlock.MERGE_LEFT))
+                openPartner(worldPosition.relative(facing.getCounterClockWise()), reversed);
+            if (state.getValue(TurnstileBlock.MERGE_RIGHT))
+                openPartner(worldPosition.relative(facing.getClockWise()), reversed);
+        }
+    }
+
+    private void openPartner(BlockPos partnerPos, boolean reversed) {
+        if (level != null && level.getBlockEntity(partnerPos) instanceof TurnstileBlockEntity partner)
+            partner.openGate(reversed, false); // no re-propagation, avoids ping-pong
     }
 
     private void deny(Player player) {
@@ -328,6 +358,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         super.write(tag, registries, clientPacket);
         if (owner != null)
             tag.putUUID("Owner", owner);
+        tag.putBoolean("ChargeTrusted", chargeTrusted);
         if (!cardContainer.getItem(0).isEmpty())
             tag.put("Card", cardContainer.getItem(0).save(registries));
         if (!trustListContainer.isEmpty())
@@ -338,6 +369,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
         super.read(tag, registries, clientPacket);
         owner = tag.hasUUID("Owner") ? tag.getUUID("Owner") : null;
+        chargeTrusted = tag.getBoolean("ChargeTrusted");
 
         ItemStack card = tag.contains("Card", Tag.TAG_COMPOUND)
                 ? ItemStack.parseOptional(registries, tag.getCompound("Card"))

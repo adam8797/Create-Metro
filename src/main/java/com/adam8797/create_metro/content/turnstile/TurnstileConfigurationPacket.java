@@ -17,14 +17,17 @@ public class TurnstileConfigurationPacket extends BlockEntityConfigurationPacket
     public static final StreamCodec<RegistryFriendlyByteBuf, TurnstileConfigurationPacket> STREAM_CODEC = StreamCodec.composite(
             BlockPos.STREAM_CODEC, packet -> packet.pos,
             ByteBufCodecs.VAR_INT, packet -> packet.fare,
+            ByteBufCodecs.BOOL, packet -> packet.chargeTrusted,
             TurnstileConfigurationPacket::new
     );
 
     private final int fare;
+    private final boolean chargeTrusted;
 
-    public TurnstileConfigurationPacket(BlockPos pos, int fare) {
+    public TurnstileConfigurationPacket(BlockPos pos, int fare, boolean chargeTrusted) {
         super(pos);
         this.fare = fare;
+        this.chargeTrusted = chargeTrusted;
     }
 
     @Override
@@ -42,5 +45,6 @@ public class TurnstileConfigurationPacket extends BlockEntityConfigurationPacket
         if (!be.isTrusted(player))
             return;
         be.setFare(fare);
+        be.setChargeTrusted(chargeTrusted);
     }
 }

@@ -51,9 +51,10 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
     /** When open, the leaf swings against the facing (free egress) rather than with it. */
     public static final BooleanProperty REVERSED = BooleanProperty.create("reversed");
 
-    // Closed barrier: a slab that blocks passage along the facing axis. One block tall (dev art).
-    private static final VoxelShape SHAPE_BLOCKS_Z = Shapes.box(0, 0, 0.375, 1, 1.0, 0.625);
-    private static final VoxelShape SHAPE_BLOCKS_X = Shapes.box(0.375, 0, 0, 0.625, 1.0, 1);
+    // Closed barrier: a slab that blocks passage along the facing axis. Two blocks tall so it can't be
+    // jumped over (the visual model is still one block tall — taller art comes later).
+    private static final VoxelShape SHAPE_BLOCKS_Z = Shapes.box(0, 0, 0.375, 1, 2.0, 0.625);
+    private static final VoxelShape SHAPE_BLOCKS_X = Shapes.box(0.375, 0, 0, 0.625, 2.0, 1);
 
     public TurnstileBlock(Properties properties) {
         super(properties);
