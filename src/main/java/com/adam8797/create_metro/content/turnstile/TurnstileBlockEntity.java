@@ -122,6 +122,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         fare = new FareScrollValueBehaviour(Component.translatable("create_metro.turnstile.fare"), this,
                 new CenteredSideValueBoxTransform())
                 .between(0, max) // clamp stays at the configured maximum; the wrench board is capped compactly
+                .withCallback(this::onFareChanged) // keep a merged pair's fare in sync when set via the wrench
                 .withFormatter(i -> i == 0 ? "Free" : String.valueOf(i))
                 .requiresWrench();
         behaviours.add(fare);
@@ -135,6 +136,16 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     public void setFare(int amount) {
         if (fare != null)
             fare.setValue(amount); // ScrollValueBehaviour clamps to its configured range
+    }
+
+    /** Fare changed in-world (wrench scroll / value board) — copy it to the merged partner. Loop-safe
+     *  because ScrollValueBehaviour.setValue no-ops when the value is unchanged. */
+    private void onFareChanged(int value) {
+        if (level == null || level.isClientSide)
+            return;
+        for (TurnstileBlockEntity partner : mergedGroup())
+            if (partner != this)
+                partner.setFare(value);
     }
 
     /** Called from the block on placement to seed the fare from config. */

@@ -146,9 +146,11 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
     }
 
     /** True if the block on the given side is a turnstile with the same facing (eligible to merge). */
-    private static boolean sameFacingTurnstile(Level level, BlockPos pos, Direction facing, Direction side) {
+    /** A same-facing turnstile neighbour that is itself unpaired (so grouping stays limited to two). */
+    private static boolean unpairedSameFacingTurnstile(Level level, BlockPos pos, Direction facing, Direction side) {
         BlockState ns = level.getBlockState(pos.relative(side));
-        return ns.getBlock() instanceof TurnstileBlock && ns.getValue(HORIZONTAL_FACING) == facing;
+        return ns.getBlock() instanceof TurnstileBlock && ns.getValue(HORIZONTAL_FACING) == facing
+                && !ns.getValue(MERGE_LEFT) && !ns.getValue(MERGE_RIGHT);
     }
 
     /** Set one merge flag on a neighbour, if that neighbour is a same-facing turnstile. */
@@ -159,24 +161,26 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
     }
 
     /** Merge this gate with any same-facing perpendicular neighbours (placement / post-rotate only). */
+    /**
+     * Pair this gate with ONE adjacent same-facing turnstile (chest rules): a lone gate joins a lone
+     * neighbour, but a third gate beside an existing pair stays separate. Left side is preferred.
+     */
     private static void applyGreedyMerge(Level level, BlockPos pos, BlockState state) {
         if (!(state.getBlock() instanceof TurnstileBlock))
             return;
+        if (state.getValue(MERGE_LEFT) || state.getValue(MERGE_RIGHT))
+            return; // already part of a pair
         Direction facing = state.getValue(HORIZONTAL_FACING);
+
         Direction left = leftOf(facing);
         Direction right = rightOf(facing);
-        boolean mergeLeft = sameFacingTurnstile(level, pos, facing, left);
-        boolean mergeRight = sameFacingTurnstile(level, pos, facing, right);
-
-        BlockState updated = state.setValue(MERGE_LEFT, mergeLeft).setValue(MERGE_RIGHT, mergeRight);
-        if (updated != state)
-            level.setBlock(pos, updated, Block.UPDATE_ALL);
-
-        // My left neighbour's matching side is its right, and vice-versa.
-        if (mergeLeft)
+        if (unpairedSameFacingTurnstile(level, pos, facing, left)) {
+            level.setBlock(pos, state.setValue(MERGE_LEFT, true), Block.UPDATE_ALL);
             setNeighbourFlag(level, pos.relative(left), facing, MERGE_RIGHT, true);
-        if (mergeRight)
+        } else if (unpairedSameFacingTurnstile(level, pos, facing, right)) {
+            level.setBlock(pos, state.setValue(MERGE_RIGHT, true), Block.UPDATE_ALL);
             setNeighbourFlag(level, pos.relative(right), facing, MERGE_LEFT, true);
+        }
     }
 
     // ------------------------------------------------------------------
@@ -220,7 +224,9 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
     protected @NotNull ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                                        Player player, InteractionHand hand, BlockHitResult hitResult) {
         if (!NumismaticsTags.AllItemTags.CARDS.matches(stack))
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            // Not a card: let the held item act (wrench rotates via its own useOn) instead of falling
+            // through to useWithoutItem, which would open the GUI.
+            return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
 
         if (level.isClientSide)
             return ItemInteractionResult.SUCCESS;
