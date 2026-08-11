@@ -44,7 +44,6 @@ public class TurnstileConfigurationPacket extends BlockEntityConfigurationPacket
     protected void applySettings(ServerPlayer player, TurnstileBlockEntity be) {
         if (!be.isTrusted(player))
             return;
-        be.setFare(fare);
-        be.setChargeTrusted(chargeTrusted);
+        be.applyConfig(fare, chargeTrusted);
     }
 }

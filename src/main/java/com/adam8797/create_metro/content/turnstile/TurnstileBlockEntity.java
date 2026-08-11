@@ -134,6 +134,33 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         notifyUpdate();
     }
 
+    /**
+     * Apply fare + charge-trusted to this gate AND its merged partners, so a double gate stays
+     * configured as one unit. Also clears cached free-pass state so the change takes effect at once.
+     */
+    public void applyConfig(int fare, boolean chargeTrusted) {
+        applyConfigLocal(fare, chargeTrusted);
+        BlockState state = getBlockState();
+        Direction facing = state.getValue(TurnstileBlock.HORIZONTAL_FACING);
+        if (state.getValue(TurnstileBlock.MERGE_LEFT))
+            applyConfigToPartner(worldPosition.relative(facing.getCounterClockWise()), fare, chargeTrusted);
+        if (state.getValue(TurnstileBlock.MERGE_RIGHT))
+            applyConfigToPartner(worldPosition.relative(facing.getClockWise()), fare, chargeTrusted);
+    }
+
+    private void applyConfigToPartner(BlockPos partnerPos, int fare, boolean chargeTrusted) {
+        if (level != null && level.getBlockEntity(partnerPos) instanceof TurnstileBlockEntity partner)
+            partner.applyConfigLocal(fare, chargeTrusted);
+    }
+
+    private void applyConfigLocal(int fare, boolean chargeTrusted) {
+        setFare(fare);
+        this.chargeTrusted = chargeTrusted;
+        immunityUntil.clear();
+        nextAttemptAllowed.clear();
+        notifyUpdate();
+    }
+
     @Override
     public boolean isTrustedInternal(Player player) {
         if (owner == null || owner.equals(player.getUUID()) || trustList.contains(player.getUUID()))
