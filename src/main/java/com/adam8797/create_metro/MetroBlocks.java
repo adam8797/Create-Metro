@@ -22,7 +22,7 @@ public class MetroBlocks {
             .properties(BlockBehaviour.Properties::noOcclusion)
             .properties(p -> p.isRedstoneConductor((state, getter, pos) -> false))
             .transform(pickaxeOnly())
-            .tag(AllBlockTags.RELOCATION_NOT_SUPPORTED.tag)
+            .tag(AllBlockTags.NON_MOVABLE.tag)
             .lang("Turnstile")
             .simpleItem()
             .register();
