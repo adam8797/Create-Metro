@@ -119,9 +119,9 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     @Override
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
         int max = Math.max(1, MetroServerConfig.MaxTurnstileFare.get());
-        fare = new ScrollValueBehaviour(Component.translatable("create_metro.turnstile.fare"), this,
+        fare = new FareScrollValueBehaviour(Component.translatable("create_metro.turnstile.fare"), this,
                 new CenteredSideValueBoxTransform())
-                .between(0, max)
+                .between(0, max) // clamp stays at the configured maximum; the wrench board is capped compactly
                 .withFormatter(i -> i == 0 ? "Free" : String.valueOf(i))
                 .requiresWrench();
         behaviours.add(fare);
