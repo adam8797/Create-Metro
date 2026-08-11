@@ -1,6 +1,7 @@
 package com.adam8797.create_metro;
 
 import com.adam8797.create_metro.content.packets.ExamplePacket;
+import com.adam8797.create_metro.content.turnstile.TurnstileConfigurationPacket;
 import net.createmod.catnip.net.base.BasePacketPayload;
 import net.createmod.catnip.net.base.CatnipPacketRegistry;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -11,7 +12,8 @@ import java.util.Locale;
 
 public enum MetroPackets implements BasePacketPayload.PacketTypeProvider
 {
-    EXAMPLE_PACKET(ExamplePacket.class, ExamplePacket.STREAM_CODEC);
+    EXAMPLE_PACKET(ExamplePacket.class, ExamplePacket.STREAM_CODEC),
+    TURNSTILE_CONFIG(TurnstileConfigurationPacket.class, TurnstileConfigurationPacket.STREAM_CODEC);
 
     private final CatnipPacketRegistry.PacketType<?> type;
 

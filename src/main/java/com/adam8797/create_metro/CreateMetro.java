@@ -43,6 +43,7 @@ public class CreateMetro {
         MetroBlocks.register();
         MetroItems.register();
         MetroBlockEntityTypes.register();
+        MetroMenuTypes.register();
         MetroCreativeTabs.register(modEventBus);
         MetroPackets.register();
 

@@ -8,6 +8,8 @@ import dev.ithundxr.createnumismatics.registry.NumismaticsTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
@@ -159,21 +161,19 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
         if (!(level.getBlockEntity(pos) instanceof TurnstileBlockEntity be))
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 
-        boolean configuring = player.isShiftKeyDown();
+        boolean sneaking = player.isShiftKeyDown();
         if (bankCard) {
-            if (configuring) {
-                if (isTrusted(player, level, pos))
-                    be.setDestinationFromCard(stack, player);
-                else
-                    notifyNotOwner(player);
-            } else {
+            // Sneak + trusted opens the config GUI (where the card can be linked as the deposit
+            // account); otherwise the card pays the fare.
+            if (sneaking && isTrusted(player, level, pos))
+                openConfig(player, pos, be);
+            else
                 be.payWithCard(stack, player);
-            }
             return ItemInteractionResult.CONSUME;
         }
 
-        // ID card: assign/revoke a trusted rider (owner-only).
-        if (configuring) {
+        // ID card: assign/revoke a free-pass rider (owner/trusted only).
+        if (sneaking) {
             if (isTrusted(player, level, pos))
                 be.toggleTrust(stack, player);
             else
@@ -190,15 +190,17 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
         if (!(level.getBlockEntity(pos) instanceof TurnstileBlockEntity be))
             return InteractionResult.PASS;
 
-        if (player.isShiftKeyDown()) {
-            if (isTrusted(player, level, pos)) {
-                be.resetDestination(player);
-                return InteractionResult.CONSUME;
-            }
-            return InteractionResult.PASS;
+        if (isTrusted(player, level, pos)) {
+            openConfig(player, pos, be);
+            return InteractionResult.CONSUME;
         }
         be.showStatus(player);
         return InteractionResult.SUCCESS;
+    }
+
+    private static void openConfig(Player player, BlockPos pos, TurnstileBlockEntity be) {
+        if (player instanceof ServerPlayer serverPlayer)
+            serverPlayer.openMenu(be, buf -> buf.writeBlockPos(pos));
     }
 
     private static void notifyNotOwner(Player player) {
@@ -239,6 +241,8 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
         if (state.is(newState.getBlock())) {
             return;
         }
+        if (level.getBlockEntity(pos) instanceof TurnstileBlockEntity be)
+            Containers.dropContents(level, pos, be.cardContainer);
         IBE.onRemove(state, level, pos, newState);
     }
 

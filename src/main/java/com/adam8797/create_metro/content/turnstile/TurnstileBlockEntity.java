@@ -1,5 +1,6 @@
 package com.adam8797.create_metro.content.turnstile;
 
+import com.adam8797.create_metro.MetroMenuTypes;
 import com.adam8797.create_metro.config.MetroServerConfig;
 import com.simibubi.create.AllSoundEvents;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
@@ -11,6 +12,8 @@ import dev.ithundxr.createnumismatics.content.backend.BankAccount;
 import dev.ithundxr.createnumismatics.content.backend.Trusted;
 import dev.ithundxr.createnumismatics.content.bank.CardItem;
 import dev.ithundxr.createnumismatics.content.bank.IDCardItem;
+import dev.ithundxr.createnumismatics.registry.NumismaticsTags;
+import dev.ithundxr.createnumismatics.util.Utils;
 import net.createmod.catnip.nbt.NBTHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -21,12 +24,18 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.Container;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -35,7 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted {
+public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, MenuProvider {
 
     /** How long (ticks) the gate stays open after a successful payment. */
     public static final int OPEN_DURATION = 30;
@@ -47,14 +56,22 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted {
     @Nullable
     protected UUID owner;
 
-    /** Account that collected fares are deposited into. When null, defaults to the owner's personal account. */
-    @Nullable
-    protected UUID destAccountId;
-
     /** Players (besides the owner) permitted to pass free and reconfigure this turnstile. */
     protected final List<UUID> trustList = new ArrayList<>();
 
     protected ScrollValueBehaviour fare;
+
+    /**
+     * Holds the (optional) bank card whose account collected fares are deposited into.
+     * When empty, fares default to the owner's personal account.
+     */
+    public final Container cardContainer = new SimpleContainer(1) {
+        @Override
+        public void setChanged() {
+            super.setChanged();
+            TurnstileBlockEntity.this.setChanged();
+        }
+    };
 
     // Transient throttling state, not persisted.
     private final Map<UUID, Long> immunityUntil = new HashMap<>();
@@ -79,6 +96,12 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted {
         return fare != null ? fare.getValue() : MetroServerConfig.DefaultTurnstileFare.get();
     }
 
+    /** Clamp and apply a new fare. Used by the GUI configuration packet. */
+    public void setFare(int amount) {
+        if (fare != null)
+            fare.setValue(amount); // ScrollValueBehaviour clamps to its configured range
+    }
+
     /** Called from the block on placement to seed the fare from config. */
     public void initFromConfig() {
         if (fare != null)
@@ -90,10 +113,15 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted {
         setChanged();
     }
 
+    @Nullable
+    public UUID getOwner() {
+        return owner;
+    }
+
     @Override
     public boolean isTrustedInternal(Player player) {
         // In dev, golden boots make you "staff" for quick testing (mirrors Numismatics' depositor).
-        if (dev.ithundxr.createnumismatics.util.Utils.isDevEnv())
+        if (Utils.isDevEnv())
             return player.getItemBySlot(EquipmentSlot.FEET).is(Items.GOLDEN_BOOTS);
         return owner == null || owner.equals(player.getUUID()) || trustList.contains(player.getUUID());
     }
@@ -102,10 +130,23 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted {
     // Fare settlement
     // ------------------------------------------------------------------
 
+    /** The bank card currently linking this turnstile to a deposit account, or empty. */
+    public ItemStack getLinkedCard() {
+        ItemStack card = cardContainer.getItem(0);
+        return NumismaticsTags.AllItemTags.CARDS.matches(card) ? card : ItemStack.EMPTY;
+    }
+
     @Nullable
     private BankAccount resolveDestination() {
-        if (destAccountId != null)
-            return Numismatics.BANK.getAccount(destAccountId);
+        ItemStack card = getLinkedCard();
+        if (!card.isEmpty()) {
+            UUID accountId = CardItem.get(card);
+            if (accountId != null) {
+                BankAccount linked = Numismatics.BANK.getAccount(accountId);
+                if (linked != null)
+                    return linked;
+            }
+        }
         if (owner != null)
             return Numismatics.BANK.getOrCreateAccount(owner, BankAccount.Type.PLAYER);
         return null;
@@ -192,29 +233,8 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted {
     }
 
     // ------------------------------------------------------------------
-    // Configuration (owner / trusted only)
+    // Configuration
     // ------------------------------------------------------------------
-
-    public void setDestinationFromCard(ItemStack cardStack, Player player) {
-        UUID accountId = CardItem.get(cardStack);
-        if (accountId == null) {
-            player.displayClientMessage(Component.translatable("create_metro.turnstile.card_blank")
-                    .withStyle(ChatFormatting.RED), true);
-            return;
-        }
-        destAccountId = accountId;
-        notifyUpdate();
-        Component name = destinationName();
-        player.displayClientMessage(Component.translatable("create_metro.turnstile.destination_set", name)
-                .withStyle(ChatFormatting.GREEN), true);
-    }
-
-    public void resetDestination(Player player) {
-        destAccountId = null;
-        notifyUpdate();
-        player.displayClientMessage(Component.translatable("create_metro.turnstile.destination_reset")
-                .withStyle(ChatFormatting.GREEN), true);
-    }
 
     public void toggleTrust(ItemStack idCardStack, Player player) {
         UUID target = IDCardItem.get(idCardStack);
@@ -241,6 +261,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted {
                 .withStyle(ChatFormatting.GRAY), false);
     }
 
+    /** Server-side display name of the deposit destination. */
     private Component destinationName() {
         BankAccount destination = (level instanceof ServerLevel) ? resolveDestination() : null;
         if (destination != null)
@@ -275,6 +296,21 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted {
     }
 
     // ------------------------------------------------------------------
+    // Menu
+    // ------------------------------------------------------------------
+
+    @Override
+    public @NotNull Component getDisplayName() {
+        return Component.translatable("block.create_metro.turnstile");
+    }
+
+    @Nullable
+    @Override
+    public AbstractContainerMenu createMenu(int id, @NotNull Inventory inventory, @NotNull Player player) {
+        return new TurnstileMenu(MetroMenuTypes.TURNSTILE.get(), id, inventory, this);
+    }
+
+    // ------------------------------------------------------------------
     // Persistence
     // ------------------------------------------------------------------
 
@@ -283,8 +319,8 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted {
         super.write(tag, registries, clientPacket);
         if (owner != null)
             tag.putUUID("Owner", owner);
-        if (destAccountId != null)
-            tag.putUUID("DestAccount", destAccountId);
+        if (!cardContainer.getItem(0).isEmpty())
+            tag.put("Card", cardContainer.getItem(0).save(registries));
         if (!trustList.isEmpty()) {
             tag.put("TrustList", NBTHelper.writeCompoundList(trustList, uuid -> {
                 CompoundTag t = new CompoundTag();
@@ -298,7 +334,12 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted {
     protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
         super.read(tag, registries, clientPacket);
         owner = tag.hasUUID("Owner") ? tag.getUUID("Owner") : null;
-        destAccountId = tag.hasUUID("DestAccount") ? tag.getUUID("DestAccount") : null;
+
+        ItemStack card = tag.contains("Card", Tag.TAG_COMPOUND)
+                ? ItemStack.parseOptional(registries, tag.getCompound("Card"))
+                : ItemStack.EMPTY;
+        cardContainer.setItem(0, card);
+
         trustList.clear();
         if (tag.contains("TrustList", Tag.TAG_LIST)) {
             trustList.addAll(NBTHelper.readCompoundList(
