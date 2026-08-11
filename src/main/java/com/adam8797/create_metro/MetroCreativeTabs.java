@@ -23,6 +23,7 @@ public class MetroCreativeTabs {
     private static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, CreateMetro.MOD_ID);
 
     public static final List<ItemProviderEntry<?, ?>> ITEMS = List.of(
+            MetroBlocks.TURNSTILE
     );
 
 
@@ -61,7 +62,10 @@ public class MetroCreativeTabs {
 
     public static void register(IEventBus modEventBus) {
         CREATIVE_MODE_TABS.register(modEventBus);
-        modEventBus.addListener(MetroCreativeTabs::hideItems);
+        // NOTE: hideItems() was cribbed from a FeatureToggle system that doesn't exist yet. With its
+        // filter commented out it removes EVERY item in ITEMS right after the generator adds them,
+        // making the tab appear empty. Leave it unregistered until feature toggles are implemented.
+        // modEventBus.addListener(MetroCreativeTabs::hideItems);
     }
 
 }

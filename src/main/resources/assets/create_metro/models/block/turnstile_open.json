@@ -1,0 +1,49 @@
+{
+  "__comment": "Developer art. Posts only; the fare-arm swings aside when the gate is open.",
+  "textures": {
+    "posts": "minecraft:block/iron_block",
+    "arm": "minecraft:block/polished_andesite",
+    "particle": "minecraft:block/iron_block"
+  },
+  "elements": [
+    {
+      "name": "post_left",
+      "from": [0, 0, 4],
+      "to": [3, 16, 12],
+      "faces": {
+        "north": { "texture": "#posts" },
+        "south": { "texture": "#posts" },
+        "east":  { "texture": "#posts" },
+        "west":  { "texture": "#posts" },
+        "up":    { "texture": "#posts" },
+        "down":  { "texture": "#posts" }
+      }
+    },
+    {
+      "name": "post_right",
+      "from": [13, 0, 4],
+      "to": [16, 16, 12],
+      "faces": {
+        "north": { "texture": "#posts" },
+        "south": { "texture": "#posts" },
+        "east":  { "texture": "#posts" },
+        "west":  { "texture": "#posts" },
+        "up":    { "texture": "#posts" },
+        "down":  { "texture": "#posts" }
+      }
+    },
+    {
+      "name": "arm_open",
+      "from": [13, 2, 6],
+      "to": [15, 12, 16],
+      "faces": {
+        "north": { "texture": "#arm" },
+        "south": { "texture": "#arm" },
+        "east":  { "texture": "#arm" },
+        "west":  { "texture": "#arm" },
+        "up":    { "texture": "#arm" },
+        "down":  { "texture": "#arm" }
+      }
+    }
+  ]
+}

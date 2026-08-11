@@ -1,5 +1,18 @@
 {
-  "itemGroup.create_metro": "Example Mod Tab",
-  "block.create_metro.example_block": "Example Block",
-  "item.create_metro.example_item": "Example Item"
+  "create_metro.creative_tab": "Create: Metro",
+
+  "block.create_metro.turnstile": "Turnstile",
+
+  "create_metro.turnstile.fare": "Fare",
+  "create_metro.turnstile.insufficient_funds": "Insufficient funds",
+  "create_metro.turnstile.card_blank": "That card isn't bound to an account",
+  "create_metro.turnstile.card_unauthorized": "You aren't authorized to use that card",
+  "create_metro.turnstile.destination_set": "Fares now deposit to %s",
+  "create_metro.turnstile.destination_reset": "Fares now deposit to the owner's personal account",
+  "create_metro.turnstile.destination_none": "nowhere (turnstile is unowned)",
+  "create_metro.turnstile.trust_added": "Rider added to the free-pass list",
+  "create_metro.turnstile.trust_removed": "Rider removed from the free-pass list",
+  "create_metro.turnstile.not_owner": "You don't own this turnstile",
+  "create_metro.turnstile.status_fare": "Fare: %s spurs",
+  "create_metro.turnstile.status_destination": "Deposits to: %s"
 }
