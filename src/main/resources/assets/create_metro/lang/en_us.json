@@ -8,6 +8,7 @@
   "create_metro.turnstile.deposit_label": "Deposit to",
   "create_metro.turnstile.deposit_linked": "Linked account",
   "create_metro.turnstile.deposit_personal": "Owner's account",
+  "create_metro.turnstile.riders_label": "Free-pass riders",
   "create_metro.turnstile.insufficient_funds": "Insufficient funds",
   "create_metro.turnstile.card_blank": "That card isn't bound to an account",
   "create_metro.turnstile.card_unauthorized": "You aren't authorized to use that card",

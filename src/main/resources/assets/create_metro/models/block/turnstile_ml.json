@@ -1,5 +1,5 @@
 {
-  "__comment": "Developer art. Iron posts + andesite fare-arm + direction arrow on top.",
+  "__comment": "Developer art. Iron posts + centered andesite arm + top arrow.",
   "textures": {
     "posts": "minecraft:block/iron_block",
     "arm": "minecraft:block/polished_andesite",

@@ -1,5 +1,5 @@
 {
-  "__comment": "Developer art. Iron posts + centered andesite arm + top arrow.",
+  "__comment": "Developer art. Leaf swung from the outer pillar in the travel direction.",
   "textures": {
     "posts": "minecraft:block/iron_block",
     "arm": "minecraft:block/polished_andesite",
@@ -8,49 +8,16 @@
   },
   "elements": [
     {
-      "name": "post_left",
+      "name": "arm_open",
       "from": [
-        0,
-        0,
-        4
-      ],
-      "to": [
-        3,
-        16,
-        12
-      ],
-      "faces": {
-        "north": {
-          "texture": "#posts"
-        },
-        "south": {
-          "texture": "#posts"
-        },
-        "east": {
-          "texture": "#posts"
-        },
-        "west": {
-          "texture": "#posts"
-        },
-        "up": {
-          "texture": "#posts"
-        },
-        "down": {
-          "texture": "#posts"
-        }
-      }
-    },
-    {
-      "name": "arm",
-      "from": [
-        3,
+        1,
         2,
-        6
+        8
       ],
       "to": [
-        13,
+        3,
         12,
-        10
+        16
       ],
       "faces": {
         "north": {

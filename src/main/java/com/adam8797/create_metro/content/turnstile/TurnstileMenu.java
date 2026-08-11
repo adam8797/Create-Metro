@@ -2,6 +2,7 @@ package com.adam8797.create_metro.content.turnstile;
 
 import com.simibubi.create.foundation.gui.menu.MenuBase;
 import dev.ithundxr.createnumismatics.content.bank.CardSlot;
+import dev.ithundxr.createnumismatics.content.bank.IDCardSlot;
 import dev.ithundxr.createnumismatics.registry.NumismaticsTags;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -17,7 +18,9 @@ import org.jetbrains.annotations.NotNull;
 public class TurnstileMenu extends MenuBase<TurnstileBlockEntity> {
 
     public static final int CARD_SLOT = 0;
-    public static final int PLAYER_INV_START = 1;
+    public static final int ID_SLOT_START = 1;
+    public static final int ID_SLOT_COUNT = 6;
+    public static final int PLAYER_INV_START = ID_SLOT_START + ID_SLOT_COUNT; // 7
     public static final int PLAYER_INV_END = PLAYER_INV_START + 36;
 
     public TurnstileMenu(MenuType<?> type, int id, Inventory inv, RegistryFriendlyByteBuf extraData) {
@@ -42,8 +45,10 @@ public class TurnstileMenu extends MenuBase<TurnstileBlockEntity> {
 
     @Override
     protected void addSlots() {
-        addSlot(new CardSlot.BoundCardSlot(contentHolder.cardContainer, 0, 140, 34));
-        addPlayerSlots(8, 84);
+        addSlot(new CardSlot.BoundCardSlot(contentHolder.cardContainer, 0, 150, 34));
+        for (int i = 0; i < ID_SLOT_COUNT; i++)
+            addSlot(new IDCardSlot.BoundIDCardSlot(contentHolder.trustListContainer, i, 8 + i * 18, 70));
+        addPlayerSlots(8, 108);
     }
 
     @Override
@@ -56,18 +61,18 @@ public class TurnstileMenu extends MenuBase<TurnstileBlockEntity> {
             return ItemStack.EMPTY;
         ItemStack stack = slot.getItem();
 
-        if (index == CARD_SLOT) {
-            // pull the linked card back into the player's inventory
+        if (index < PLAYER_INV_START) {
+            // from a machine slot back to the player
             if (!moveItemStackTo(stack, PLAYER_INV_START, PLAYER_INV_END, false))
                 return ItemStack.EMPTY;
-        } else {
-            // from the player inventory: only bound cards go into the card slot
-            if (NumismaticsTags.AllItemTags.CARDS.matches(stack)) {
-                if (!moveItemStackTo(stack, CARD_SLOT, CARD_SLOT + 1, false))
-                    return ItemStack.EMPTY;
-            } else {
+        } else if (NumismaticsTags.AllItemTags.CARDS.matches(stack)) {
+            if (!moveItemStackTo(stack, CARD_SLOT, CARD_SLOT + 1, false))
                 return ItemStack.EMPTY;
-            }
+        } else if (NumismaticsTags.AllItemTags.ID_CARDS.matches(stack)) {
+            if (!moveItemStackTo(stack, ID_SLOT_START, PLAYER_INV_START, false))
+                return ItemStack.EMPTY;
+        } else {
+            return ItemStack.EMPTY;
         }
         slot.setChanged();
         return ItemStack.EMPTY;

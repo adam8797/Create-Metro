@@ -18,6 +18,7 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
 
     private static final int PANEL = 0xFFC6C6C6;
     private static final int TITLE_BAR = 0xFF8B8B8B;
+    private static final int BORDER = 0xFF55585F;
     private static final int SLOT_BG = 0xFF8B8B8B;
     private static final int SLOT_BORDER = 0xFF373737;
     private static final int TEXT = 0x404040;
@@ -27,9 +28,9 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
     public TurnstileScreen(TurnstileMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
         this.imageWidth = 176;
-        this.imageHeight = 168;
+        this.imageHeight = 192;
         this.titleLabelY = 6;
-        this.inventoryLabelY = 74;
+        this.inventoryLabelY = 98;
     }
 
     @Override
@@ -61,19 +62,25 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
         int x = leftPos;
         int y = topPos;
 
-        // panel + title bar
         g.fill(x, y, x + imageWidth, y + imageHeight, PANEL);
         g.fill(x, y, x + imageWidth, y + 18, TITLE_BAR);
+        // thin outer frame
+        g.fill(x, y, x + imageWidth, y + 1, BORDER);
+        g.fill(x, y + imageHeight - 1, x + imageWidth, y + imageHeight, BORDER);
+        g.fill(x, y, x + 1, y + imageHeight, BORDER);
+        g.fill(x + imageWidth - 1, y, x + imageWidth, y + imageHeight, BORDER);
 
-        // card (deposit) slot indent
-        slot(g, x + 140, y + 34);
-
-        // player inventory indents
+        // deposit-account slot
+        slot(g, x + 150, y + 34);
+        // free-pass rider (ID card) slots
+        for (int i = 0; i < TurnstileMenu.ID_SLOT_COUNT; i++)
+            slot(g, x + 8 + i * 18, y + 70);
+        // player inventory
         for (int row = 0; row < 3; row++)
             for (int col = 0; col < 9; col++)
-                slot(g, x + 8 + col * 18, y + 84 + row * 18);
+                slot(g, x + 8 + col * 18, y + 108 + row * 18);
         for (int col = 0; col < 9; col++)
-            slot(g, x + 8 + col * 18, y + 142);
+            slot(g, x + 8 + col * 18, y + 166);
     }
 
     private void slot(GuiGraphics g, int itemX, int itemY) {
@@ -88,12 +95,14 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
 
         // fare
         g.drawString(font, Component.translatable("create_metro.turnstile.fare"), 8, 22, TEXT, false);
-        Component fareText = Component.translatable("create_metro.turnstile.fare_amount", editFare);
-        g.drawCenteredString(font, fareText, 44, 38, 0xFFFFFF);
+        g.drawCenteredString(font, Component.translatable("create_metro.turnstile.fare_amount", editFare), 44, 38, 0xFFFFFF);
 
-        // deposit destination
-        g.drawString(font, Component.translatable("create_metro.turnstile.deposit_label"), 100, 22, TEXT, false);
-        g.drawString(font, depositName(), 100, 56, TEXT, false);
+        // deposit account
+        g.drawString(font, Component.translatable("create_metro.turnstile.deposit_label"), 96, 22, TEXT, false);
+        g.drawString(font, depositName(), 96, 40, TEXT, false);
+
+        // free-pass riders
+        g.drawString(font, Component.translatable("create_metro.turnstile.riders_label"), 8, 60, TEXT, false);
     }
 
     private Component depositName() {

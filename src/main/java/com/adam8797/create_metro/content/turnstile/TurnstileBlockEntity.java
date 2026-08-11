@@ -11,9 +11,9 @@ import dev.ithundxr.createnumismatics.Numismatics;
 import dev.ithundxr.createnumismatics.content.backend.BankAccount;
 import dev.ithundxr.createnumismatics.content.backend.Trusted;
 import dev.ithundxr.createnumismatics.content.bank.CardItem;
-import dev.ithundxr.createnumismatics.content.bank.IDCardItem;
+import dev.ithundxr.createnumismatics.content.backend.trust_list.TrustListContainer;
 import dev.ithundxr.createnumismatics.registry.NumismaticsTags;
-import net.createmod.catnip.nbt.NBTHelper;
+import dev.ithundxr.createnumismatics.util.Utils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -28,10 +28,12 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
@@ -55,8 +57,11 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     @Nullable
     protected UUID owner;
 
-    /** Players (besides the owner) permitted to pass free and reconfigure this turnstile. */
+    /** Players (besides the owner) permitted to pass free. Derived from {@link #trustListContainer}. */
     protected final List<UUID> trustList = new ArrayList<>();
+
+    /** Holds the ID cards of trusted riders (edited via the GUI); rebuilds {@link #trustList} on change. */
+    public final TrustListContainer trustListContainer = new TrustListContainer(trustList, this::setChanged);
 
     protected ScrollValueBehaviour fare;
 
@@ -119,7 +124,10 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
 
     @Override
     public boolean isTrustedInternal(Player player) {
-        return owner == null || owner.equals(player.getUUID()) || trustList.contains(player.getUUID());
+        if (owner == null || owner.equals(player.getUUID()) || trustList.contains(player.getUUID()))
+            return true;
+        // Dev convenience (mirrors Numismatics): golden boots make you staff for quick self-testing.
+        return Utils.isDevEnv() && player.getItemBySlot(EquipmentSlot.FEET).is(Items.GOLDEN_BOOTS);
     }
 
     // ------------------------------------------------------------------
@@ -152,10 +160,10 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
      * Deduct the fare from {@code source} and deposit it into the destination account.
      * Opens the gate on success. Returns false if the source lacks funds.
      */
-    private boolean settleFare(Player player, @Nullable BankAccount source) {
+    private boolean settleFare(Player player, @Nullable BankAccount source, boolean reversed) {
         int amount = getFare();
         if (amount <= 0) {
-            openGate();
+            openGate(reversed);
             return true;
         }
         if (source == null)
@@ -170,7 +178,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             com.adam8797.create_metro.CreateMetro.LOGGER.warn(
                     "Turnstile at {} charged {} spurs with no destination account; funds discarded.", worldPosition, amount);
 
-        openGate();
+        openGate(reversed);
         return true;
     }
 
@@ -188,19 +196,20 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         UUID id = player.getUUID();
 
         if (!isEntering(player)) {
-            // free egress
-            openGate();
+            // free egress — swing open in the direction of travel (backward, against facing)
+            openGate(true);
             immunityUntil.put(id, now + IMMUNITY_TICKS);
             return;
         }
 
+        // From here on the player is entering (crossing with the facing) → gate swings forward.
         Long immune = immunityUntil.get(id);
         if (immune != null && now < immune) {
-            openGate();
+            openGate(false);
             return;
         }
         if (isTrusted(player)) {
-            openGate();
+            openGate(false);
             immunityUntil.put(id, now + IMMUNITY_TICKS);
             return;
         }
@@ -210,7 +219,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         nextAttemptAllowed.put(id, now + ATTEMPT_THROTTLE);
 
         BankAccount source = Numismatics.BANK.getAccount(player);
-        if (settleFare(player, source)) {
+        if (settleFare(player, source, false)) {
             immunityUntil.put(id, now + IMMUNITY_TICKS);
         } else {
             deny(player);
@@ -244,31 +253,13 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             playDenySound();
             return;
         }
-        if (!settleFare(player, source))
+        if (!settleFare(player, source, !isEntering(player)))
             deny(player);
     }
 
     // ------------------------------------------------------------------
-    // Configuration
+    // Status
     // ------------------------------------------------------------------
-
-    public void toggleTrust(ItemStack idCardStack, Player player) {
-        UUID target = IDCardItem.get(idCardStack);
-        if (target == null) {
-            player.displayClientMessage(Component.translatable("create_metro.turnstile.card_blank")
-                    .withStyle(ChatFormatting.RED), true);
-            return;
-        }
-        if (trustList.remove(target)) {
-            player.displayClientMessage(Component.translatable("create_metro.turnstile.trust_removed")
-                    .withStyle(ChatFormatting.YELLOW), true);
-        } else {
-            trustList.add(target);
-            player.displayClientMessage(Component.translatable("create_metro.turnstile.trust_added")
-                    .withStyle(ChatFormatting.GREEN), true);
-        }
-        notifyUpdate();
-    }
 
     public void showStatus(Player player) {
         player.displayClientMessage(Component.translatable("create_metro.turnstile.status_fare", getFare())
@@ -289,12 +280,14 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     // Gate control
     // ------------------------------------------------------------------
 
-    private void openGate() {
+    /** Open the gate; {@code reversed} swings the leaf against the facing (used for free egress). */
+    private void openGate(boolean reversed) {
         if (level == null)
             return;
         BlockState state = getBlockState();
-        if (!state.getValue(TurnstileBlock.OPEN))
-            level.setBlock(worldPosition, state.setValue(TurnstileBlock.OPEN, true), 3);
+        BlockState target = state.setValue(TurnstileBlock.OPEN, true).setValue(TurnstileBlock.REVERSED, reversed);
+        if (state != target)
+            level.setBlock(worldPosition, target, 3);
         level.playSound(null, worldPosition, SoundEvents.ARROW_HIT_PLAYER, SoundSource.BLOCKS, 0.6f, 1.2f);
         if (!level.getBlockTicks().hasScheduledTick(worldPosition, state.getBlock()))
             level.scheduleTick(worldPosition, state.getBlock(), OPEN_DURATION);
@@ -337,13 +330,8 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             tag.putUUID("Owner", owner);
         if (!cardContainer.getItem(0).isEmpty())
             tag.put("Card", cardContainer.getItem(0).save(registries));
-        if (!trustList.isEmpty()) {
-            tag.put("TrustList", NBTHelper.writeCompoundList(trustList, uuid -> {
-                CompoundTag t = new CompoundTag();
-                t.putUUID("UUID", uuid);
-                return t;
-            }));
-        }
+        if (!trustListContainer.isEmpty())
+            tag.put("TrustList", trustListContainer.save(new CompoundTag(), registries));
     }
 
     @Override
@@ -357,10 +345,8 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         cardContainer.setItem(0, card);
 
         trustList.clear();
-        if (tag.contains("TrustList", Tag.TAG_LIST)) {
-            trustList.addAll(NBTHelper.readCompoundList(
-                    tag.getList("TrustList", Tag.TAG_COMPOUND),
-                    t -> t.getUUID("UUID")));
-        }
+        trustListContainer.clearContent();
+        if (tag.contains("TrustList", Tag.TAG_COMPOUND))
+            trustListContainer.load(tag.getCompound("TrustList"), registries);
     }
 }

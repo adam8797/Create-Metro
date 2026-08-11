@@ -48,6 +48,8 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
     public static final BooleanProperty MERGE_LEFT = BooleanProperty.create("merge_left");
     /** Merged with the neighbour on the clockwise (right, relative to facing) side. */
     public static final BooleanProperty MERGE_RIGHT = BooleanProperty.create("merge_right");
+    /** When open, the leaf swings against the facing (free egress) rather than with it. */
+    public static final BooleanProperty REVERSED = BooleanProperty.create("reversed");
 
     // Closed barrier: a slab that blocks passage along the facing axis. One block tall (dev art).
     private static final VoxelShape SHAPE_BLOCKS_Z = Shapes.box(0, 0, 0.375, 1, 1.0, 0.625);
@@ -59,7 +61,8 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
                 .setValue(HORIZONTAL_FACING, Direction.NORTH)
                 .setValue(OPEN, false)
                 .setValue(MERGE_LEFT, false)
-                .setValue(MERGE_RIGHT, false));
+                .setValue(MERGE_RIGHT, false)
+                .setValue(REVERSED, false));
     }
 
     // ------------------------------------------------------------------
@@ -93,7 +96,7 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(HORIZONTAL_FACING, OPEN, MERGE_LEFT, MERGE_RIGHT);
+        builder.add(HORIZONTAL_FACING, OPEN, MERGE_LEFT, MERGE_RIGHT, REVERSED);
     }
 
     @Override
@@ -207,9 +210,7 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
     @Override
     protected @NotNull ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                                        Player player, InteractionHand hand, BlockHitResult hitResult) {
-        boolean bankCard = NumismaticsTags.AllItemTags.CARDS.matches(stack);
-        boolean idCard = NumismaticsTags.AllItemTags.ID_CARDS.matches(stack);
-        if (!bankCard && !idCard)
+        if (!NumismaticsTags.AllItemTags.CARDS.matches(stack))
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 
         if (level.isClientSide)
@@ -217,24 +218,13 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
         if (!(level.getBlockEntity(pos) instanceof TurnstileBlockEntity be))
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 
-        boolean sneaking = player.isShiftKeyDown();
-        if (bankCard) {
-            if (sneaking && isTrusted(player, level, pos))
-                openConfig(player, pos, be);
-            else
-                be.payWithCard(stack, player);
-            return ItemInteractionResult.CONSUME;
-        }
-
-        // ID card: assign/revoke a free-pass rider (owner/trusted only).
-        if (sneaking) {
-            if (isTrusted(player, level, pos))
-                be.toggleTrust(stack, player);
-            else
-                notifyNotOwner(player);
-            return ItemInteractionResult.CONSUME;
-        }
-        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        // Sneak + trusted opens the GUI (link the card as the deposit account there);
+        // otherwise the bank card pays the fare.
+        if (player.isShiftKeyDown() && isTrusted(player, level, pos))
+            openConfig(player, pos, be);
+        else
+            be.payWithCard(stack, player);
+        return ItemInteractionResult.CONSUME;
     }
 
     @Override
@@ -255,12 +245,6 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
     private static void openConfig(Player player, BlockPos pos, TurnstileBlockEntity be) {
         if (player instanceof ServerPlayer serverPlayer)
             serverPlayer.openMenu(be, buf -> buf.writeBlockPos(pos));
-    }
-
-    private static void notifyNotOwner(Player player) {
-        player.displayClientMessage(net.minecraft.network.chat.Component
-                .translatable("create_metro.turnstile.not_owner")
-                .withStyle(net.minecraft.ChatFormatting.RED), true);
     }
 
     // ------------------------------------------------------------------
@@ -329,8 +313,10 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
         if (state.getValue(MERGE_LEFT))
             setNeighbourFlag(level, pos.relative(leftOf(facing)), facing, MERGE_RIGHT, false);
 
-        if (level.getBlockEntity(pos) instanceof TurnstileBlockEntity be)
+        if (level.getBlockEntity(pos) instanceof TurnstileBlockEntity be) {
             Containers.dropContents(level, pos, be.cardContainer);
+            Containers.dropContents(level, pos, be.trustListContainer);
+        }
         IBE.onRemove(state, level, pos, newState);
     }
 
