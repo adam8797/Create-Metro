@@ -13,7 +13,6 @@ import dev.ithundxr.createnumismatics.content.backend.Trusted;
 import dev.ithundxr.createnumismatics.content.bank.CardItem;
 import dev.ithundxr.createnumismatics.content.bank.IDCardItem;
 import dev.ithundxr.createnumismatics.registry.NumismaticsTags;
-import dev.ithundxr.createnumismatics.util.Utils;
 import net.createmod.catnip.nbt.NBTHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -29,12 +28,10 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
@@ -122,9 +119,6 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
 
     @Override
     public boolean isTrustedInternal(Player player) {
-        // In dev, golden boots make you "staff" for quick testing (mirrors Numismatics' depositor).
-        if (Utils.isDevEnv())
-            return player.getItemBySlot(EquipmentSlot.FEET).is(Items.GOLDEN_BOOTS);
         return owner == null || owner.equals(player.getUUID()) || trustList.contains(player.getUUID());
     }
 
