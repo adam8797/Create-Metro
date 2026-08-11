@@ -39,10 +39,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, MenuProvider {
@@ -135,30 +138,76 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     }
 
     /**
-     * Apply fare + charge-trusted to this gate AND its merged partners, so a double gate stays
-     * configured as one unit. Also clears cached free-pass state so the change takes effect at once.
+     * Apply fare + charge-trusted from the GUI, then push the WHOLE configuration (owner, fare,
+     * charge-trusted, deposit card, and trusted-rider cards) to every merged partner — a double gate
+     * is configured as one unit. Also clears cached free-pass state so the change takes effect at once.
      */
     public void applyConfig(int fare, boolean chargeTrusted) {
-        applyConfigLocal(fare, chargeTrusted);
-        BlockState state = getBlockState();
-        Direction facing = state.getValue(TurnstileBlock.HORIZONTAL_FACING);
-        if (state.getValue(TurnstileBlock.MERGE_LEFT))
-            applyConfigToPartner(worldPosition.relative(facing.getCounterClockWise()), fare, chargeTrusted);
-        if (state.getValue(TurnstileBlock.MERGE_RIGHT))
-            applyConfigToPartner(worldPosition.relative(facing.getClockWise()), fare, chargeTrusted);
-    }
-
-    private void applyConfigToPartner(BlockPos partnerPos, int fare, boolean chargeTrusted) {
-        if (level != null && level.getBlockEntity(partnerPos) instanceof TurnstileBlockEntity partner)
-            partner.applyConfigLocal(fare, chargeTrusted);
-    }
-
-    private void applyConfigLocal(int fare, boolean chargeTrusted) {
         setFare(fare);
         this.chargeTrusted = chargeTrusted;
         immunityUntil.clear();
         nextAttemptAllowed.clear();
         notifyUpdate();
+        syncConfigToGroup();
+    }
+
+    /** Push this gate's full configuration onto every other gate in the merged group. */
+    public void syncConfigToGroup() {
+        for (TurnstileBlockEntity partner : mergedGroup())
+            if (partner != this)
+                partner.copyConfigFrom(this);
+    }
+
+    /** On merge, adopt the configuration of an already-placed group member (the older gate wins). */
+    public void adoptGroupConfig() {
+        for (TurnstileBlockEntity partner : mergedGroup())
+            if (partner != this) {
+                copyConfigFrom(partner);
+                return;
+            }
+    }
+
+    /** Copy the full configuration of {@code source} into this gate (cards are copied, not moved). */
+    public void copyConfigFrom(TurnstileBlockEntity source) {
+        this.owner = source.owner;
+        this.chargeTrusted = source.chargeTrusted;
+        setFare(source.getFare());
+        cardContainer.setItem(0, source.cardContainer.getItem(0).copy());
+        for (int i = 0; i < trustListContainer.getContainerSize(); i++)
+            trustListContainer.setItem(i, source.trustListContainer.getItem(i).copy());
+        trustListContainer.setChanged(); // rebuild the derived trustList
+        immunityUntil.clear();
+        nextAttemptAllowed.clear();
+        notifyUpdate();
+    }
+
+    /** All turnstile block entities in this merged group (including self), via BFS over merge links. */
+    private List<TurnstileBlockEntity> mergedGroup() {
+        List<TurnstileBlockEntity> group = new ArrayList<>();
+        if (level == null) {
+            group.add(this);
+            return group;
+        }
+        Set<BlockPos> seen = new HashSet<>();
+        ArrayDeque<TurnstileBlockEntity> queue = new ArrayDeque<>();
+        queue.add(this);
+        seen.add(worldPosition);
+        while (!queue.isEmpty()) {
+            TurnstileBlockEntity be = queue.poll();
+            group.add(be);
+            BlockState st = be.getBlockState();
+            Direction f = st.getValue(TurnstileBlock.HORIZONTAL_FACING);
+            if (st.getValue(TurnstileBlock.MERGE_LEFT))
+                enqueueGroup(be.worldPosition.relative(f.getCounterClockWise()), seen, queue);
+            if (st.getValue(TurnstileBlock.MERGE_RIGHT))
+                enqueueGroup(be.worldPosition.relative(f.getClockWise()), seen, queue);
+        }
+        return group;
+    }
+
+    private void enqueueGroup(BlockPos pos, Set<BlockPos> seen, ArrayDeque<TurnstileBlockEntity> queue) {
+        if (seen.add(pos) && level != null && level.getBlockEntity(pos) instanceof TurnstileBlockEntity be)
+            queue.add(be);
     }
 
     @Override

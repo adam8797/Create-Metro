@@ -125,8 +125,10 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
                 be.setOwner(player.getUUID());
             be.initFromConfig();
         }
-        // Greedily merge with same-facing neighbours to either side.
+        // Greedily merge with same-facing neighbours, then adopt the group's shared config.
         applyGreedyMerge(level, pos, level.getBlockState(pos));
+        if (level.getBlockEntity(pos) instanceof TurnstileBlockEntity be)
+            be.adoptGroupConfig();
     }
 
     private static Direction leftOf(Direction facing) {
@@ -277,6 +279,8 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
                     .setValue(MERGE_RIGHT, false);
             level.setBlock(pos, rotated, Block.UPDATE_ALL);
             applyGreedyMerge(level, pos, level.getBlockState(pos));
+            if (level.getBlockEntity(pos) instanceof TurnstileBlockEntity be)
+                be.adoptGroupConfig();
         }
         level.playSound(null, pos, SoundEvents.ITEM_FRAME_ROTATE_ITEM, SoundSource.BLOCKS, 0.6f, 1.0f);
         return InteractionResult.SUCCESS;
@@ -309,12 +313,14 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
         }
         // detach any merged neighbours so they don't render a hidden inner post
         Direction facing = state.getValue(HORIZONTAL_FACING);
+        boolean merged = state.getValue(MERGE_LEFT) || state.getValue(MERGE_RIGHT);
         if (state.getValue(MERGE_RIGHT))
             setNeighbourFlag(level, pos.relative(rightOf(facing)), facing, MERGE_LEFT, false);
         if (state.getValue(MERGE_LEFT))
             setNeighbourFlag(level, pos.relative(leftOf(facing)), facing, MERGE_RIGHT, false);
 
-        if (level.getBlockEntity(pos) instanceof TurnstileBlockEntity be) {
+        // Cards are replicated across the group; only a solo (last) gate drops them, avoiding dupes.
+        if (!merged && level.getBlockEntity(pos) instanceof TurnstileBlockEntity be) {
             Containers.dropContents(level, pos, be.cardContainer);
             Containers.dropContents(level, pos, be.trustListContainer);
         }
