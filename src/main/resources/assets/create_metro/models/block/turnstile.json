@@ -1,110 +1,39 @@
 {
-  "__comment": "Static part: iron posts + top arrow. The fare-arm is rendered/animated by TurnstileRenderer.",
-  "textures": {
-    "posts": "minecraft:block/iron_block",
-    "arm": "minecraft:block/polished_andesite",
-    "arrow": "create_metro:block/turnstile_arrow",
-    "particle": "minecraft:block/iron_block"
-  },
-  "elements": [
-    {
-      "name": "post_right",
-      "from": [
-        13,
-        0,
-        4
-      ],
-      "to": [
-        16,
-        16,
-        12
-      ],
-      "faces": {
-        "north": {
-          "texture": "#posts"
-        },
-        "south": {
-          "texture": "#posts"
-        },
-        "east": {
-          "texture": "#posts"
-        },
-        "west": {
-          "texture": "#posts"
-        },
-        "up": {
-          "texture": "#posts"
-        },
-        "down": {
-          "texture": "#posts"
-        }
-      }
-    },
-    {
-      "name": "post_left",
-      "from": [
-        0,
-        0,
-        4
-      ],
-      "to": [
-        3,
-        16,
-        12
-      ],
-      "faces": {
-        "north": {
-          "texture": "#posts"
-        },
-        "south": {
-          "texture": "#posts"
-        },
-        "east": {
-          "texture": "#posts"
-        },
-        "west": {
-          "texture": "#posts"
-        },
-        "up": {
-          "texture": "#posts"
-        },
-        "down": {
-          "texture": "#posts"
-        }
-      }
-    },
-    {
-      "name": "arrow",
-      "from": [
-        3,
-        15,
-        3
-      ],
-      "to": [
-        13,
-        16,
-        13
-      ],
-      "faces": {
-        "north": {
-          "texture": "#arm"
-        },
-        "south": {
-          "texture": "#arm"
-        },
-        "east": {
-          "texture": "#arm"
-        },
-        "west": {
-          "texture": "#arm"
-        },
-        "up": {
-          "texture": "#arrow"
-        },
-        "down": {
-          "texture": "#arm"
-        }
-      }
-    }
-  ]
+	"format_version": "1.21.11",
+	"credit": "Static part: iron posts + top arrow. The fare-arm is rendered/animated by TurnstileRenderer.",
+	"texture_size": [32, 32],
+	"textures": {
+		"1": "Pictures:create/block/andesite_casing",
+		"particle": "Pictures:create/block/andesite_block"
+	},
+	"elements": [
+		{
+			"name": "post_right",
+			"from": [13, 0, 4],
+			"to": [16, 16, 12],
+			"faces": {
+				"north": {"uv": [9, 0, 11.5, 16], "texture": "#1"},
+				"east": {"uv": [2, 0, 10, 16], "texture": "#1"},
+				"south": {"uv": [11.5, 0, 14, 16], "texture": "#1"},
+				"west": {"uv": [2, 0, 10, 16], "texture": "#1"},
+				"up": {"uv": [14, 2, 16, 14], "texture": "#1"},
+				"down": {"uv": [0, 2, 2, 14], "texture": "#1"}
+			}
+		},
+		{
+			"name": "post_left",
+			"from": [0, 0, 4],
+			"to": [3, 16, 12],
+			"rotation": {"angle": 0, "axis": "y", "origin": [16, 0, 0]},
+			"faces": {
+				"north": {"uv": [11.5, 0, 9, 16], "texture": "#1"},
+				"east": {"uv": [10, 0, 2, 16], "texture": "#1"},
+				"south": {"uv": [14, 0, 11.5, 16], "texture": "#1"},
+				"west": {"uv": [10, 0, 2, 16], "texture": "#1"},
+				"up": {"uv": [16, 2, 14, 14], "texture": "#1"},
+				"down": {"uv": [2, 2, 0, 14], "texture": "#1"}
+			}
+		}
+	],
+	"display": {}
 }

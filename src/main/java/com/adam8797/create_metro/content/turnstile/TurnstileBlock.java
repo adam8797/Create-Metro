@@ -281,9 +281,11 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
         if (state.getValue(MERGE_RIGHT)) {
             level.setBlock(pos, state.setValue(MERGE_RIGHT, false), Block.UPDATE_ALL);
             setNeighbourFlag(level, pos.relative(rightOf(facing)), facing, MERGE_LEFT, false);
+            surrenderCards(level, pos); // the partner keeps the (shared) cards; avoids a break dupe
         } else if (state.getValue(MERGE_LEFT)) {
             level.setBlock(pos, state.setValue(MERGE_LEFT, false), Block.UPDATE_ALL);
             setNeighbourFlag(level, pos.relative(leftOf(facing)), facing, MERGE_RIGHT, false);
+            surrenderCards(level, pos);
         } else {
             Direction next = facing.getClockWise();
             BlockState rotated = state.setValue(HORIZONTAL_FACING, next)
@@ -296,6 +298,17 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
         }
         level.playSound(null, pos, SoundEvents.ITEM_FRAME_ROTATE_ITEM, SoundSource.BLOCKS, 0.6f, 1.0f);
         return InteractionResult.SUCCESS;
+    }
+
+    /** When a pair is separated by the wrench, the wrenched gate gives up its copies of the shared
+     *  cards so they aren't duplicated on break — the partner (which didn't move) keeps them. */
+    private static void surrenderCards(Level level, BlockPos pos) {
+        if (level.getBlockEntity(pos) instanceof TurnstileBlockEntity be) {
+            be.cardContainer.clearContent();
+            be.trustListContainer.clearContent();
+            be.trustListContainer.setChanged(); // rebuild the (now empty) trust list
+            be.notifyUpdate();
+        }
     }
 
     @Override
