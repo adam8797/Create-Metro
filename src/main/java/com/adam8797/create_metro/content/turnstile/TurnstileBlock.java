@@ -223,23 +223,23 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
     @Override
     protected @NotNull ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                                        Player player, InteractionHand hand, BlockHitResult hitResult) {
-        if (!NumismaticsTags.AllItemTags.CARDS.matches(stack))
-            // Not a card: let the held item act (wrench rotates via its own useOn) instead of falling
-            // through to useWithoutItem, which would open the GUI.
-            return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
-
-        if (level.isClientSide)
-            return ItemInteractionResult.SUCCESS;
-        if (!(level.getBlockEntity(pos) instanceof TurnstileBlockEntity be))
+        // Empty hand: defer to useWithoutItem (open the GUI / show status). NOTE: useItemOn is also
+        // invoked with an empty stack, so this must PASS rather than SKIP or the GUI never opens.
+        if (stack.isEmpty())
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 
-        // Sneak + trusted opens the GUI (link the card as the deposit account there);
-        // otherwise the bank card pays the fare.
-        if (player.isShiftKeyDown() && isTrusted(player, level, pos))
-            openConfig(player, pos, be);
-        else
-            be.payWithCard(stack, player);
-        return ItemInteractionResult.CONSUME;
+        // A bank card pays the fare.
+        if (NumismaticsTags.AllItemTags.CARDS.matches(stack)) {
+            if (level.isClientSide)
+                return ItemInteractionResult.SUCCESS;
+            if (level.getBlockEntity(pos) instanceof TurnstileBlockEntity be)
+                be.payWithCard(stack, player);
+            return ItemInteractionResult.CONSUME;
+        }
+
+        // Any other held item (wrench, blocks, tools, ID cards) acts through its own useOn — the wrench
+        // rotates; nothing here should open the GUI.
+        return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
     }
 
     @Override
