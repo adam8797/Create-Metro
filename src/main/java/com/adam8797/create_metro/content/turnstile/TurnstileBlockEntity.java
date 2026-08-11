@@ -17,7 +17,9 @@ import dev.ithundxr.createnumismatics.util.Utils;
 import net.createmod.catnip.nbt.NBTHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -178,7 +180,10 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         return true;
     }
 
-    /** Walk-through path: always charges the player's personal account. */
+    /**
+     * Directional walk-through: crossing WITH the gate's facing (entry) charges the player's personal
+     * account; crossing AGAINST it (exit) is free — the trip has ended and they may leave.
+     */
     public void onPlayerWalkThrough(Player player) {
         if (!(level instanceof ServerLevel serverLevel))
             return;
@@ -187,6 +192,13 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
 
         long now = serverLevel.getGameTime();
         UUID id = player.getUUID();
+
+        if (!isEntering(player)) {
+            // free egress
+            openGate();
+            immunityUntil.put(id, now + IMMUNITY_TICKS);
+            return;
+        }
 
         Long immune = immunityUntil.get(id);
         if (immune != null && now < immune) {
@@ -209,6 +221,16 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         } else {
             deny(player);
         }
+    }
+
+    /** True if the player is crossing in the gate's facing direction (an entry that should be charged). */
+    private boolean isEntering(Player player) {
+        Direction facing = getBlockState().getValue(TurnstileBlock.HORIZONTAL_FACING);
+        Vec3i normal = facing.getNormal();
+        double dx = player.getX() - (worldPosition.getX() + 0.5);
+        double dz = player.getZ() - (worldPosition.getZ() + 0.5);
+        // Player standing on the side opposite the facing normal is approaching to cross with the facing.
+        return dx * normal.getX() + dz * normal.getZ() < 0;
     }
 
     /** Right-click with a bank card: charge that card's account. */

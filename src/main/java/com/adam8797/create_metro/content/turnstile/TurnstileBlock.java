@@ -9,10 +9,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -29,8 +33,6 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -42,9 +44,12 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
 
     public static final DirectionProperty HORIZONTAL_FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty OPEN = BlockStateProperties.OPEN;
+    /** Merged with the neighbour on the counter-clockwise (left, relative to facing) side. */
+    public static final BooleanProperty MERGE_LEFT = BooleanProperty.create("merge_left");
+    /** Merged with the neighbour on the clockwise (right, relative to facing) side. */
+    public static final BooleanProperty MERGE_RIGHT = BooleanProperty.create("merge_right");
 
-    // Closed barrier: a slab that blocks passage along the relevant horizontal axis. Height is capped at
-    // one block for dev art; a taller/animated model comes later.
+    // Closed barrier: a slab that blocks passage along the facing axis. One block tall (dev art).
     private static final VoxelShape SHAPE_BLOCKS_Z = Shapes.box(0, 0, 0.375, 1, 1.0, 0.625);
     private static final VoxelShape SHAPE_BLOCKS_X = Shapes.box(0.375, 0, 0, 0.625, 1.0, 1);
 
@@ -52,11 +57,13 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
         super(properties);
         registerDefaultState(defaultBlockState()
                 .setValue(HORIZONTAL_FACING, Direction.NORTH)
-                .setValue(OPEN, false));
+                .setValue(OPEN, false)
+                .setValue(MERGE_LEFT, false)
+                .setValue(MERGE_RIGHT, false));
     }
 
     // ------------------------------------------------------------------
-    // Shape
+    // Shape (collision barrier is per-cell; merging is purely visual)
     // ------------------------------------------------------------------
 
     private static VoxelShape barrierShape(BlockState state) {
@@ -76,7 +83,7 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
     }
 
     // ------------------------------------------------------------------
-    // Placement / states
+    // Placement / states / merging
     // ------------------------------------------------------------------
 
     @Override
@@ -86,19 +93,24 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(HORIZONTAL_FACING, OPEN);
+        builder.add(HORIZONTAL_FACING, OPEN, MERGE_LEFT, MERGE_RIGHT);
     }
 
     @Override
     @SuppressWarnings("deprecation")
     public @NotNull BlockState rotate(BlockState state, Rotation rotation) {
+        // Facing rotates; the merge flags are facing-relative so they carry over unchanged.
         return state.setValue(HORIZONTAL_FACING, rotation.rotate(state.getValue(HORIZONTAL_FACING)));
     }
 
     @Override
     @SuppressWarnings("deprecation")
     public @NotNull BlockState mirror(BlockState state, Mirror mirror) {
-        return state.rotate(mirror.getRotation(state.getValue(HORIZONTAL_FACING)));
+        BlockState mirrored = state.rotate(mirror.getRotation(state.getValue(HORIZONTAL_FACING)));
+        // mirroring flips the left/right sides
+        return mirrored
+                .setValue(MERGE_LEFT, state.getValue(MERGE_RIGHT))
+                .setValue(MERGE_RIGHT, state.getValue(MERGE_LEFT));
     }
 
     @Override
@@ -109,6 +121,50 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
                 be.setOwner(player.getUUID());
             be.initFromConfig();
         }
+        // Greedily merge with same-facing neighbours to either side.
+        applyGreedyMerge(level, pos, level.getBlockState(pos));
+    }
+
+    private static Direction leftOf(Direction facing) {
+        return facing.getCounterClockWise();
+    }
+
+    private static Direction rightOf(Direction facing) {
+        return facing.getClockWise();
+    }
+
+    /** True if the block on the given side is a turnstile with the same facing (eligible to merge). */
+    private static boolean sameFacingTurnstile(Level level, BlockPos pos, Direction facing, Direction side) {
+        BlockState ns = level.getBlockState(pos.relative(side));
+        return ns.getBlock() instanceof TurnstileBlock && ns.getValue(HORIZONTAL_FACING) == facing;
+    }
+
+    /** Set one merge flag on a neighbour, if that neighbour is a same-facing turnstile. */
+    private static void setNeighbourFlag(Level level, BlockPos neighbourPos, Direction facing, BooleanProperty flag, boolean value) {
+        BlockState ns = level.getBlockState(neighbourPos);
+        if (ns.getBlock() instanceof TurnstileBlock && ns.getValue(HORIZONTAL_FACING) == facing && ns.getValue(flag) != value)
+            level.setBlock(neighbourPos, ns.setValue(flag, value), Block.UPDATE_ALL);
+    }
+
+    /** Merge this gate with any same-facing perpendicular neighbours (placement / post-rotate only). */
+    private static void applyGreedyMerge(Level level, BlockPos pos, BlockState state) {
+        if (!(state.getBlock() instanceof TurnstileBlock))
+            return;
+        Direction facing = state.getValue(HORIZONTAL_FACING);
+        Direction left = leftOf(facing);
+        Direction right = rightOf(facing);
+        boolean mergeLeft = sameFacingTurnstile(level, pos, facing, left);
+        boolean mergeRight = sameFacingTurnstile(level, pos, facing, right);
+
+        BlockState updated = state.setValue(MERGE_LEFT, mergeLeft).setValue(MERGE_RIGHT, mergeRight);
+        if (updated != state)
+            level.setBlock(pos, updated, Block.UPDATE_ALL);
+
+        // My left neighbour's matching side is its right, and vice-versa.
+        if (mergeLeft)
+            setNeighbourFlag(level, pos.relative(left), facing, MERGE_RIGHT, true);
+        if (mergeRight)
+            setNeighbourFlag(level, pos.relative(right), facing, MERGE_LEFT, true);
     }
 
     // ------------------------------------------------------------------
@@ -163,8 +219,6 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
 
         boolean sneaking = player.isShiftKeyDown();
         if (bankCard) {
-            // Sneak + trusted opens the config GUI (where the card can be linked as the deposit
-            // account); otherwise the card pays the fare.
             if (sneaking && isTrusted(player, level, pos))
                 openConfig(player, pos, be);
             else
@@ -210,8 +264,38 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
     }
 
     // ------------------------------------------------------------------
-    // Ownership protection (mirrors Numismatics depositors)
+    // Wrench: unmerge one neighbour per click, then rotate; greedily re-merge on returning to a
+    // facing that has a same-facing neighbour. (solo = 4 clicks/turn, +1 per merged neighbour.)
     // ------------------------------------------------------------------
+
+    @Override
+    public InteractionResult onWrenched(BlockState state, UseOnContext context) {
+        Player player = context.getPlayer();
+        Level level = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        if (!isTrusted(player, level, pos))
+            return InteractionResult.FAIL;
+        if (level.isClientSide)
+            return InteractionResult.SUCCESS;
+
+        Direction facing = state.getValue(HORIZONTAL_FACING);
+        if (state.getValue(MERGE_RIGHT)) {
+            level.setBlock(pos, state.setValue(MERGE_RIGHT, false), Block.UPDATE_ALL);
+            setNeighbourFlag(level, pos.relative(rightOf(facing)), facing, MERGE_LEFT, false);
+        } else if (state.getValue(MERGE_LEFT)) {
+            level.setBlock(pos, state.setValue(MERGE_LEFT, false), Block.UPDATE_ALL);
+            setNeighbourFlag(level, pos.relative(leftOf(facing)), facing, MERGE_RIGHT, false);
+        } else {
+            Direction next = facing.getClockWise();
+            BlockState rotated = state.setValue(HORIZONTAL_FACING, next)
+                    .setValue(MERGE_LEFT, false)
+                    .setValue(MERGE_RIGHT, false);
+            level.setBlock(pos, rotated, Block.UPDATE_ALL);
+            applyGreedyMerge(level, pos, level.getBlockState(pos));
+        }
+        level.playSound(null, pos, SoundEvents.ITEM_FRAME_ROTATE_ITEM, SoundSource.BLOCKS, 0.6f, 1.0f);
+        return InteractionResult.SUCCESS;
+    }
 
     @Override
     public InteractionResult onSneakWrenched(BlockState state, UseOnContext context) {
@@ -220,12 +304,9 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
         return IWrenchable.super.onSneakWrenched(state, context);
     }
 
-    @Override
-    public InteractionResult onWrenched(BlockState state, UseOnContext context) {
-        if (!isTrusted(context.getPlayer(), context.getLevel(), context.getClickedPos()))
-            return InteractionResult.FAIL;
-        return IWrenchable.super.onWrenched(state, context);
-    }
+    // ------------------------------------------------------------------
+    // Ownership protection (mirrors Numismatics depositors)
+    // ------------------------------------------------------------------
 
     @Override
     @SuppressWarnings("deprecation")
@@ -241,6 +322,13 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
         if (state.is(newState.getBlock())) {
             return;
         }
+        // detach any merged neighbours so they don't render a hidden inner post
+        Direction facing = state.getValue(HORIZONTAL_FACING);
+        if (state.getValue(MERGE_RIGHT))
+            setNeighbourFlag(level, pos.relative(rightOf(facing)), facing, MERGE_LEFT, false);
+        if (state.getValue(MERGE_LEFT))
+            setNeighbourFlag(level, pos.relative(leftOf(facing)), facing, MERGE_RIGHT, false);
+
         if (level.getBlockEntity(pos) instanceof TurnstileBlockEntity be)
             Containers.dropContents(level, pos, be.cardContainer);
         IBE.onRemove(state, level, pos, newState);

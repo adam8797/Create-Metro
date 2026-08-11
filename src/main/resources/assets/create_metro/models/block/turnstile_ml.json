@@ -41,39 +41,6 @@
       }
     },
     {
-      "name": "post_left",
-      "from": [
-        0,
-        0,
-        4
-      ],
-      "to": [
-        3,
-        16,
-        12
-      ],
-      "faces": {
-        "north": {
-          "texture": "#posts"
-        },
-        "south": {
-          "texture": "#posts"
-        },
-        "east": {
-          "texture": "#posts"
-        },
-        "west": {
-          "texture": "#posts"
-        },
-        "up": {
-          "texture": "#posts"
-        },
-        "down": {
-          "texture": "#posts"
-        }
-      }
-    },
-    {
       "name": "arm",
       "from": [
         3,
