@@ -1,23 +1,21 @@
 {
-  "__comment": "Static part: iron posts + top arrow. The fare-arm is rendered/animated by TurnstileRenderer.",
+  "__comment": "Turnstile fare-arm (closed pose); rotated by TurnstileRenderer.",
   "textures": {
-    "posts": "minecraft:block/iron_block",
     "arm": "minecraft:block/polished_andesite",
-    "arrow": "create_metro:block/turnstile_arrow",
-    "particle": "minecraft:block/iron_block"
+    "particle": "minecraft:block/polished_andesite"
   },
   "elements": [
     {
-      "name": "arrow",
+      "name": "arm",
       "from": [
         3,
-        15,
-        3
+        2,
+        6
       ],
       "to": [
         13,
-        16,
-        13
+        12,
+        10
       ],
       "faces": {
         "north": {
@@ -33,7 +31,7 @@
           "texture": "#arm"
         },
         "up": {
-          "texture": "#arrow"
+          "texture": "#arm"
         },
         "down": {
           "texture": "#arm"

@@ -10,6 +10,7 @@ public class MetroBlockEntityTypes {
     public static final BlockEntityEntry<TurnstileBlockEntity> TURNSTILE = REGISTRATE
             .blockEntity("turnstile", TurnstileBlockEntity::new)
             .validBlocks(MetroBlocks.TURNSTILE)
+            .renderer(() -> com.adam8797.create_metro.content.turnstile.TurnstileRenderer::new)
             .register();
 
     public static void register() { }

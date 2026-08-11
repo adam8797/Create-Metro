@@ -25,28 +25,28 @@
       "model": "create_metro:block/turnstile_mlr"
     },
     "facing=north,open=true,merge_left=false,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile_open_fwd"
+      "model": "create_metro:block/turnstile"
     },
     "facing=north,open=true,merge_left=false,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile_open_bwd"
+      "model": "create_metro:block/turnstile"
     },
     "facing=north,open=true,merge_left=false,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mr_open_fwd"
+      "model": "create_metro:block/turnstile_mr"
     },
     "facing=north,open=true,merge_left=false,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mr_open_bwd"
+      "model": "create_metro:block/turnstile_mr"
     },
     "facing=north,open=true,merge_left=true,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile_ml_open_fwd"
+      "model": "create_metro:block/turnstile_ml"
     },
     "facing=north,open=true,merge_left=true,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile_ml_open_bwd"
+      "model": "create_metro:block/turnstile_ml"
     },
     "facing=north,open=true,merge_left=true,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mlr_open_fwd"
+      "model": "create_metro:block/turnstile_mlr"
     },
     "facing=north,open=true,merge_left=true,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mlr_open_bwd"
+      "model": "create_metro:block/turnstile_mlr"
     },
     "facing=east,open=false,merge_left=false,merge_right=false,reversed=false": {
       "model": "create_metro:block/turnstile",
@@ -81,35 +81,35 @@
       "y": 90
     },
     "facing=east,open=true,merge_left=false,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile_open_fwd",
+      "model": "create_metro:block/turnstile",
       "y": 90
     },
     "facing=east,open=true,merge_left=false,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile_open_bwd",
+      "model": "create_metro:block/turnstile",
       "y": 90
     },
     "facing=east,open=true,merge_left=false,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mr_open_fwd",
+      "model": "create_metro:block/turnstile_mr",
       "y": 90
     },
     "facing=east,open=true,merge_left=false,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mr_open_bwd",
+      "model": "create_metro:block/turnstile_mr",
       "y": 90
     },
     "facing=east,open=true,merge_left=true,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile_ml_open_fwd",
+      "model": "create_metro:block/turnstile_ml",
       "y": 90
     },
     "facing=east,open=true,merge_left=true,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile_ml_open_bwd",
+      "model": "create_metro:block/turnstile_ml",
       "y": 90
     },
     "facing=east,open=true,merge_left=true,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mlr_open_fwd",
+      "model": "create_metro:block/turnstile_mlr",
       "y": 90
     },
     "facing=east,open=true,merge_left=true,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mlr_open_bwd",
+      "model": "create_metro:block/turnstile_mlr",
       "y": 90
     },
     "facing=south,open=false,merge_left=false,merge_right=false,reversed=false": {
@@ -145,35 +145,35 @@
       "y": 180
     },
     "facing=south,open=true,merge_left=false,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile_open_fwd",
+      "model": "create_metro:block/turnstile",
       "y": 180
     },
     "facing=south,open=true,merge_left=false,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile_open_bwd",
+      "model": "create_metro:block/turnstile",
       "y": 180
     },
     "facing=south,open=true,merge_left=false,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mr_open_fwd",
+      "model": "create_metro:block/turnstile_mr",
       "y": 180
     },
     "facing=south,open=true,merge_left=false,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mr_open_bwd",
+      "model": "create_metro:block/turnstile_mr",
       "y": 180
     },
     "facing=south,open=true,merge_left=true,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile_ml_open_fwd",
+      "model": "create_metro:block/turnstile_ml",
       "y": 180
     },
     "facing=south,open=true,merge_left=true,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile_ml_open_bwd",
+      "model": "create_metro:block/turnstile_ml",
       "y": 180
     },
     "facing=south,open=true,merge_left=true,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mlr_open_fwd",
+      "model": "create_metro:block/turnstile_mlr",
       "y": 180
     },
     "facing=south,open=true,merge_left=true,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mlr_open_bwd",
+      "model": "create_metro:block/turnstile_mlr",
       "y": 180
     },
     "facing=west,open=false,merge_left=false,merge_right=false,reversed=false": {
@@ -209,35 +209,35 @@
       "y": 270
     },
     "facing=west,open=true,merge_left=false,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile_open_fwd",
+      "model": "create_metro:block/turnstile",
       "y": 270
     },
     "facing=west,open=true,merge_left=false,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile_open_bwd",
+      "model": "create_metro:block/turnstile",
       "y": 270
     },
     "facing=west,open=true,merge_left=false,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mr_open_fwd",
+      "model": "create_metro:block/turnstile_mr",
       "y": 270
     },
     "facing=west,open=true,merge_left=false,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mr_open_bwd",
+      "model": "create_metro:block/turnstile_mr",
       "y": 270
     },
     "facing=west,open=true,merge_left=true,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile_ml_open_fwd",
+      "model": "create_metro:block/turnstile_ml",
       "y": 270
     },
     "facing=west,open=true,merge_left=true,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile_ml_open_bwd",
+      "model": "create_metro:block/turnstile_ml",
       "y": 270
     },
     "facing=west,open=true,merge_left=true,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mlr_open_fwd",
+      "model": "create_metro:block/turnstile_mlr",
       "y": 270
     },
     "facing=west,open=true,merge_left=true,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mlr_open_bwd",
+      "model": "create_metro:block/turnstile_mlr",
       "y": 270
     }
   }

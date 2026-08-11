@@ -14,6 +14,8 @@ import dev.ithundxr.createnumismatics.content.bank.CardItem;
 import dev.ithundxr.createnumismatics.content.backend.trust_list.TrustListContainer;
 import dev.ithundxr.createnumismatics.registry.NumismaticsTags;
 import dev.ithundxr.createnumismatics.util.Utils;
+import net.createmod.catnip.animation.LerpedFloat;
+import net.createmod.catnip.animation.LerpedFloat.Chaser;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -87,8 +89,18 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     private final Map<UUID, Long> immunityUntil = new HashMap<>();
     private final Map<UUID, Long> nextAttemptAllowed = new HashMap<>();
 
+    /** Client-side door swing animation, 0 (closed) .. 1 (open). Chased from the OPEN block state. */
+    public final LerpedFloat swing = LerpedFloat.linear().startWithValue(0);
+
     public TurnstileBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        swing.chase(getBlockState().getValue(TurnstileBlock.OPEN) ? 1 : 0, 0.25f, Chaser.EXP);
+        swing.tickChaser();
     }
 
     @Override
