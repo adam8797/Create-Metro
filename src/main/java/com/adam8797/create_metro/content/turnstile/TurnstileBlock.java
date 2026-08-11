@@ -35,6 +35,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
@@ -83,7 +84,12 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
     @Override
     @SuppressWarnings("deprecation")
     public @NotNull VoxelShape getCollisionShape(BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos, @NotNull CollisionContext context) {
-        return state.getValue(OPEN) ? Shapes.empty() : barrierShape(state);
+        // The barrier is empty only for a player who has paid (or is otherwise allowed through); it stays
+        // solid for everyone else, so a tailgater can't slip through behind them.
+        if (context instanceof EntityCollisionContext ec && ec.getEntity() instanceof Player player
+                && level.getBlockEntity(pos) instanceof TurnstileBlockEntity be && be.isAuthorized(player))
+            return Shapes.empty();
+        return barrierShape(state);
     }
 
     // ------------------------------------------------------------------
