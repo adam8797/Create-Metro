@@ -15,8 +15,8 @@ import software.bernie.geckolib.renderer.GeoBlockRenderer;
  * solo gate or as one half of a merged (wide) gate.
  *
  * <p>Bone layout: {@code left}/{@code right} are the two half-groups (each a post + a short door + a wide
- * door). The {@code left} group sits on the facing-right (+X) side, {@code right} on the facing-left (-X)
- * side. {@code MERGE_LEFT} = a merged neighbour on the facing-left side, {@code MERGE_RIGHT} = facing-right.
+ * door), aligned so the {@code left} group is hidden on {@code MERGE_LEFT} and {@code right} on
+ * {@code MERGE_RIGHT}.
  */
 public class TurnstileGeoRenderer extends GeoBlockRenderer<TurnstileBlockEntity> {
 
@@ -33,11 +33,11 @@ public class TurnstileGeoRenderer extends GeoBlockRenderer<TurnstileBlockEntity>
         boolean mergeRight = state.getValue(TurnstileBlock.MERGE_RIGHT); // neighbour on the facing-right side
         boolean merged = mergeLeft || mergeRight;
 
-        // Hide the half that overlaps the merged neighbour so a pair reads as one wide gate. The 'left'
-        // bone is on the facing-right side and vice-versa, so the merge flags map to the opposite bone.
-        // A solo gate (neither flag) keeps both halves. Hiding a half-group also hides its children.
-        setHidden(model, "left", mergeRight);
-        setHidden(model, "right", mergeLeft);
+        // Hide the half that overlaps the merged neighbour so a pair reads as one wide gate: the 'left'
+        // bone group is on the MERGE_LEFT side, 'right' on the MERGE_RIGHT side. A solo gate (neither
+        // flag) keeps both halves. Hiding a half-group also hides its children.
+        setHidden(model, "left", mergeLeft);
+        setHidden(model, "right", mergeRight);
 
         // Solo gates use the short doors (meet mid-block); paired gates use the wide doors (meet mid-pair).
         setHidden(model, "left_door_short", merged);
