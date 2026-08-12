@@ -98,9 +98,10 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     /** Server-only throttle for repeated charge attempts / deny messages. */
     private final Map<UUID, Long> nextAttemptAllowed = new HashMap<>();
 
-    /** GeckoLib animation cache + the swing animation played while the gate is OPEN. */
+    /** GeckoLib animation cache + the swing animations played while the gate is OPEN (by direction). */
     private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
-    private static final RawAnimation OPEN_ANIM = RawAnimation.begin().thenPlayAndHold("open");
+    private static final RawAnimation OPEN_FORWARD = RawAnimation.begin().thenPlayAndHold("open");
+    private static final RawAnimation OPEN_REVERSED = RawAnimation.begin().thenPlayAndHold("open_reversed");
 
     public TurnstileBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -125,9 +126,11 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     }
 
     private PlayState swingState(AnimationState<TurnstileBlockEntity> state) {
-        if (getBlockState().getValue(TurnstileBlock.OPEN))
-            return state.setAndContinue(OPEN_ANIM);
-        return PlayState.STOP; // transition back to the closed pose
+        BlockState bs = getBlockState();
+        if (!bs.getValue(TurnstileBlock.OPEN))
+            return PlayState.STOP; // transition back to the closed pose
+        // REVERSED gates (exit direction) swing the other way.
+        return state.setAndContinue(bs.getValue(TurnstileBlock.REVERSED) ? OPEN_REVERSED : OPEN_FORWARD);
     }
 
     @Override

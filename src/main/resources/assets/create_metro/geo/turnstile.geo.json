@@ -1,27 +1,514 @@
 {
-  "__comment": "PLACEHOLDER GeckoLib model — replace with your Blockbench GeckoLib export. Keep the top-level bones named 'left' and 'right' (the renderer hides them per merge), each parenting its post/coins/arm; the arm bones must be 'left_arm' / 'right_arm' (the animation rotates them).",
   "format_version": "1.12.0",
   "minecraft:geometry": [
     {
       "description": {
-        "identifier": "geometry.turnstile",
+        "identifier": "geometry.turnstile - Converted",
         "texture_width": 64,
         "texture_height": 64,
         "visible_bounds_width": 3,
         "visible_bounds_height": 2.5,
-        "visible_bounds_offset": [0, 0.75, 0]
+        "visible_bounds_offset": [
+          0,
+          0.75,
+          0
+        ]
       },
       "bones": [
-        { "name": "left", "pivot": [0, 0, 0] },
-        { "name": "left_post", "parent": "left", "pivot": [1, 0, 8],
-          "cubes": [ { "origin": [0, 0, 4], "size": [2, 16, 8], "uv": [0, 0] } ] },
-        { "name": "left_arm", "parent": "left", "pivot": [2, 3, 8],
-          "cubes": [ { "origin": [2, 2, 7.5], "size": [5.5, 12, 1], "uv": [24, 0] } ] },
-        { "name": "right", "pivot": [0, 0, 0] },
-        { "name": "right_post", "parent": "right", "pivot": [15, 0, 8],
-          "cubes": [ { "origin": [14, 0, 4], "size": [2, 16, 8], "uv": [0, 24] } ] },
-        { "name": "right_arm", "parent": "right", "pivot": [14, 3, 8],
-          "cubes": [ { "origin": [8.5, 2, 7.5], "size": [5.5, 12, 1], "uv": [24, 24] } ] }
+        {
+          "name": "door_left",
+          "pivot": [
+            6,
+            8,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                0.5,
+                2,
+                -0.5
+              ],
+              "size": [
+                5.5,
+                12,
+                1
+              ],
+              "uv": {
+                "north": {
+                  "uv": [
+                    17,
+                    0
+                  ],
+                  "uv_size": [
+                    5.5,
+                    12
+                  ]
+                },
+                "east": {
+                  "uv": [
+                    25,
+                    0
+                  ],
+                  "uv_size": [
+                    1,
+                    32
+                  ]
+                },
+                "south": {
+                  "uv": [
+                    0,
+                    0
+                  ],
+                  "uv_size": [
+                    15.5,
+                    32
+                  ]
+                },
+                "west": {
+                  "uv": [
+                    0,
+                    2
+                  ],
+                  "uv_size": [
+                    3,
+                    12
+                  ]
+                },
+                "up": {
+                  "uv": [
+                    0,
+                    30
+                  ],
+                  "uv_size": [
+                    15,
+                    2
+                  ]
+                },
+                "down": {
+                  "uv": [
+                    0,
+                    30
+                  ],
+                  "uv_size": [
+                    15,
+                    2
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "door_right",
+          "pivot": [
+            -6,
+            8,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -6,
+                2,
+                -0.5
+              ],
+              "size": [
+                5.5,
+                12,
+                1
+              ],
+              "uv": {
+                "north": {
+                  "uv": [
+                    0,
+                    0
+                  ],
+                  "uv_size": [
+                    15,
+                    32
+                  ]
+                },
+                "east": {
+                  "uv": [
+                    23,
+                    0
+                  ],
+                  "uv_size": [
+                    1,
+                    12
+                  ]
+                },
+                "south": {
+                  "uv": [
+                    16.5,
+                    0
+                  ],
+                  "uv_size": [
+                    15.5,
+                    32
+                  ]
+                },
+                "west": {
+                  "uv": [
+                    23,
+                    0
+                  ],
+                  "uv_size": [
+                    1,
+                    32
+                  ]
+                },
+                "up": {
+                  "uv": [
+                    0,
+                    30
+                  ],
+                  "uv_size": [
+                    15,
+                    2
+                  ]
+                },
+                "down": {
+                  "uv": [
+                    0,
+                    30
+                  ],
+                  "uv_size": [
+                    15,
+                    2
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "posts",
+          "pivot": [
+            0,
+            0,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -8,
+                0,
+                -4
+              ],
+              "size": [
+                2,
+                16,
+                8
+              ],
+              "uv": {
+                "north": {
+                  "uv": [
+                    18,
+                    0
+                  ],
+                  "uv_size": [
+                    5,
+                    32
+                  ]
+                },
+                "east": {
+                  "uv": [
+                    4,
+                    0
+                  ],
+                  "uv_size": [
+                    16,
+                    32
+                  ]
+                },
+                "south": {
+                  "uv": [
+                    23,
+                    0
+                  ],
+                  "uv_size": [
+                    2,
+                    16
+                  ]
+                },
+                "west": {
+                  "uv": [
+                    4,
+                    0
+                  ],
+                  "uv_size": [
+                    8,
+                    16
+                  ]
+                },
+                "up": {
+                  "uv": [
+                    32,
+                    28
+                  ],
+                  "uv_size": [
+                    -4,
+                    -24
+                  ]
+                },
+                "down": {
+                  "uv": [
+                    4,
+                    28
+                  ],
+                  "uv_size": [
+                    -4,
+                    -24
+                  ]
+                }
+              }
+            },
+            {
+              "origin": [
+                -7.975,
+                14,
+                2
+              ],
+              "size": [
+                1.95,
+                2,
+                2
+              ],
+              "pivot": [
+                -8,
+                14,
+                2
+              ],
+              "rotation": [
+                -45,
+                0,
+                0
+              ],
+              "uv": {
+                "north": {
+                  "uv": [
+                    9.95,
+                    4
+                  ],
+                  "uv_size": [
+                    -5.95,
+                    4
+                  ]
+                },
+                "east": {
+                  "uv": [
+                    16,
+                    4
+                  ],
+                  "uv_size": [
+                    -6,
+                    4
+                  ]
+                },
+                "south": {
+                  "uv": [
+                    22,
+                    4
+                  ],
+                  "uv_size": [
+                    -5.95,
+                    4
+                  ]
+                },
+                "west": {
+                  "uv": [
+                    28,
+                    4
+                  ],
+                  "uv_size": [
+                    -6,
+                    4
+                  ]
+                },
+                "up": {
+                  "uv": [
+                    4.05,
+                    12
+                  ],
+                  "uv_size": [
+                    5.95,
+                    -4
+                  ]
+                },
+                "down": {
+                  "uv": [
+                    10.05,
+                    12
+                  ],
+                  "uv_size": [
+                    5.95,
+                    -4
+                  ]
+                }
+              }
+            },
+            {
+              "origin": [
+                6,
+                0,
+                -4
+              ],
+              "size": [
+                2,
+                16,
+                8
+              ],
+              "uv": {
+                "north": {
+                  "uv": [
+                    24,
+                    0
+                  ],
+                  "uv_size": [
+                    4,
+                    32
+                  ]
+                },
+                "east": {
+                  "uv": [
+                    20,
+                    0
+                  ],
+                  "uv_size": [
+                    -16,
+                    32
+                  ]
+                },
+                "south": {
+                  "uv": [
+                    20,
+                    0
+                  ],
+                  "uv_size": [
+                    2,
+                    16
+                  ]
+                },
+                "west": {
+                  "uv": [
+                    12,
+                    0
+                  ],
+                  "uv_size": [
+                    -8,
+                    16
+                  ]
+                },
+                "up": {
+                  "uv": [
+                    28,
+                    28
+                  ],
+                  "uv_size": [
+                    4,
+                    -24
+                  ]
+                },
+                "down": {
+                  "uv": [
+                    0,
+                    28
+                  ],
+                  "uv_size": [
+                    4,
+                    -24
+                  ]
+                }
+              }
+            },
+            {
+              "origin": [
+                6.025,
+                14,
+                2
+              ],
+              "size": [
+                1.95,
+                2,
+                2
+              ],
+              "pivot": [
+                8,
+                14,
+                2
+              ],
+              "rotation": [
+                -45,
+                0,
+                0
+              ],
+              "uv": {
+                "north": {
+                  "uv": [
+                    12,
+                    14
+                  ],
+                  "uv_size": [
+                    1.95,
+                    2
+                  ]
+                },
+                "east": {
+                  "uv": [
+                    10,
+                    14
+                  ],
+                  "uv_size": [
+                    2,
+                    2
+                  ]
+                },
+                "south": {
+                  "uv": [
+                    15,
+                    14
+                  ],
+                  "uv_size": [
+                    1.95,
+                    2
+                  ]
+                },
+                "west": {
+                  "uv": [
+                    13,
+                    14
+                  ],
+                  "uv_size": [
+                    2,
+                    2
+                  ]
+                },
+                "up": {
+                  "uv": [
+                    12,
+                    12
+                  ],
+                  "uv_size": [
+                    1.95,
+                    2
+                  ]
+                },
+                "down": {
+                  "uv": [
+                    13,
+                    14
+                  ],
+                  "uv_size": [
+                    1.95,
+                    -2
+                  ]
+                }
+              }
+            }
+          ]
+        }
       ]
     }
   ]
