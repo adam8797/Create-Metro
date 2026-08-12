@@ -23,6 +23,10 @@ public class MetroBlocks {
             .properties(p -> p.isRedstoneConductor((state, getter, pos) -> false))
             .transform(pickaxeOnly())
             .tag(AllBlockTags.NON_MOVABLE.tag)
+            // The blockstate + models are hand-authored (see tools/derive_turnstile_models.py); a no-op
+            // data-gen provider stops Registrate emitting a cube_all model that references a
+            // create_metro:block/turnstile texture (which doesn't exist) and crashing runData.
+            .blockstate((c, p) -> { })
             .lang("Turnstile")
             .simpleItem()
             .register();
