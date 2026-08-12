@@ -45,6 +45,9 @@ public class TurnstileGeoRenderer extends GeoBlockRenderer<TurnstileBlockEntity>
         setHidden(model, "left_door_wide", !merged);
         setHidden(model, "right_door_wide", !merged);
 
+        // The no-entry marker is only shown when exit is blocked.
+        setHidden(model, "no_entry", !animatable.getNoExit());
+
         super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick,
                 packedLight, packedOverlay, colour);
     }

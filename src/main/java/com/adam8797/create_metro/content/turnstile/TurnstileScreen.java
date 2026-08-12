@@ -21,13 +21,14 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
 
     private int editFare;
     private boolean chargeTrusted;
+    private boolean noExit;
 
     public TurnstileScreen(TurnstileMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
         this.imageWidth = 176;
-        this.imageHeight = 210;
+        this.imageHeight = 232;
         this.titleLabelY = 6;
-        this.inventoryLabelY = 116;
+        this.inventoryLabelY = 138;
     }
 
     @Override
@@ -35,6 +36,7 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
         super.init();
         editFare = menu.contentHolder != null ? menu.contentHolder.getFare() : 0;
         chargeTrusted = menu.contentHolder != null && menu.contentHolder.getChargeTrusted();
+        noExit = menu.contentHolder != null && menu.contentHolder.getNoExit();
 
         int x = leftPos;
         int y = topPos;
@@ -46,6 +48,11 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
                 .pos(x + 8, y + 54)
                 .selected(chargeTrusted)
                 .onValueChange((cb, value) -> chargeTrusted = value)
+                .build());
+        addRenderableWidget(Checkbox.builder(Component.translatable("create_metro.turnstile.no_exit"), font)
+                .pos(x + 8, y + 76)
+                .selected(noExit)
+                .onValueChange((cb, value) -> noExit = value)
                 .build());
     }
 
@@ -74,12 +81,12 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
 
         slot(g, x + 150, y + 30);
         for (int i = 0; i < TurnstileMenu.ID_SLOT_COUNT; i++)
-            slot(g, x + 8 + i * 18, y + 90);
+            slot(g, x + 8 + i * 18, y + 112);
         for (int row = 0; row < 3; row++)
             for (int col = 0; col < 9; col++)
-                slot(g, x + 8 + col * 18, y + 128 + row * 18);
+                slot(g, x + 8 + col * 18, y + 150 + row * 18);
         for (int col = 0; col < 9; col++)
-            slot(g, x + 8 + col * 18, y + 186);
+            slot(g, x + 8 + col * 18, y + 208);
     }
 
     private void slot(GuiGraphics g, int itemX, int itemY) {
@@ -96,7 +103,7 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
         g.drawCenteredString(font, Component.translatable("create_metro.turnstile.fare_amount", editFare), 56, 36, 0xFFFFFF);
 
         g.drawString(font, Component.translatable("create_metro.turnstile.deposit_label"), 110, 20, TEXT, false);
-        g.drawString(font, Component.translatable("create_metro.turnstile.riders_label"), 8, 78, TEXT, false);
+        g.drawString(font, Component.translatable("create_metro.turnstile.riders_label"), 8, 100, TEXT, false);
     }
 
     @Override
@@ -111,6 +118,6 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
         super.removed();
         if (menu.contentHolder != null)
             CatnipServices.NETWORK.sendToServer(
-                    new TurnstileConfigurationPacket(menu.contentHolder.getBlockPos(), editFare, chargeTrusted));
+                    new TurnstileConfigurationPacket(menu.contentHolder.getBlockPos(), editFare, chargeTrusted, noExit));
     }
 }

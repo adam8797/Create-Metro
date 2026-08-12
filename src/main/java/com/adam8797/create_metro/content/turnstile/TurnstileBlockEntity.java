@@ -80,6 +80,9 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     /** When true, even the owner and trusted riders are charged (useful for testing or paid staff). */
     protected boolean chargeTrusted = false;
 
+    /** When true, exiting (crossing against the facing) is blocked instead of a free trip-end pass. */
+    protected boolean noExit = false;
+
     /**
      * Holds the (optional) bank card whose account collected fares are deposited into.
      * When empty, fares default to the owner's personal account.
@@ -210,14 +213,24 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         notifyUpdate();
     }
 
+    public boolean getNoExit() {
+        return noExit;
+    }
+
+    public void setNoExit(boolean value) {
+        this.noExit = value;
+        notifyUpdate();
+    }
+
     /**
      * Apply fare + charge-trusted from the GUI, then push the WHOLE configuration (owner, fare,
      * charge-trusted, deposit card, and trusted-rider cards) to every merged partner — a double gate
      * is configured as one unit. Also clears cached free-pass state so the change takes effect at once.
      */
-    public void applyConfig(int fare, boolean chargeTrusted) {
+    public void applyConfig(int fare, boolean chargeTrusted, boolean noExit) {
         setFare(fare);
         this.chargeTrusted = chargeTrusted;
+        this.noExit = noExit;
         authorizedUntil.clear();
         nextAttemptAllowed.clear();
         notifyUpdate();
@@ -244,6 +257,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     public void copyConfigFrom(TurnstileBlockEntity source) {
         this.owner = source.owner;
         this.chargeTrusted = source.chargeTrusted;
+        this.noExit = source.noExit;
         setFare(source.getFare());
         cardContainer.setItem(0, source.cardContainer.getItem(0).copy());
         for (int i = 0; i < trustListContainer.getContainerSize(); i++)
@@ -348,6 +362,8 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             return; // already allowed through — barrier is empty for them
 
         if (!isEntering(player)) {
+            if (noExit)
+                return; // exit disabled: leave the barrier solid so they can't cross
             grantPass(player, true); // free egress (trip ended); swing against the facing
             return;
         }
@@ -394,6 +410,10 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             player.displayClientMessage(Component.translatable("create_metro.turnstile.card_unauthorized")
                     .withStyle(ChatFormatting.RED), true);
             playDenySound();
+            return;
+        }
+        if (!isEntering(player) && noExit) {
+            playDenySound(); // exit disabled: no card tap gets you out this way
             return;
         }
         if (chargeFare(source))
@@ -490,6 +510,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         if (owner != null)
             tag.putUUID("Owner", owner);
         tag.putBoolean("ChargeTrusted", chargeTrusted);
+        tag.putBoolean("NoExit", noExit);
         if (!cardContainer.getItem(0).isEmpty())
             tag.put("Card", cardContainer.getItem(0).save(registries));
         if (!trustListContainer.isEmpty())
@@ -513,6 +534,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         super.read(tag, registries, clientPacket);
         owner = tag.hasUUID("Owner") ? tag.getUUID("Owner") : null;
         chargeTrusted = tag.getBoolean("ChargeTrusted");
+        noExit = tag.getBoolean("NoExit");
 
         ItemStack card = tag.contains("Card", Tag.TAG_COMPOUND)
                 ? ItemStack.parseOptional(registries, tag.getCompound("Card"))
