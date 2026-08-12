@@ -65,6 +65,8 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     private static final int PASS_TICKS = OPEN_DURATION + 20;
     /** Minimum ticks between charge attempts (and deny messages) for a given player. */
     private static final int ATTEMPT_THROTTLE = 20;
+    /** Manual-pay gates stay open this long (5s) after payment, or until the rider crosses through. */
+    private static final int MANUAL_OPEN_TICKS = 100;
 
     @Nullable
     protected UUID owner;
@@ -83,6 +85,9 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     /** When true, exiting (crossing against the facing) is blocked instead of a free trip-end pass. */
     protected boolean noExit = false;
 
+    /** When true (default), walking in auto-charges; when false, riders pay by card or empty-hand click. */
+    protected boolean autoPay = true;
+
     /**
      * Holds the (optional) bank card whose account collected fares are deposited into.
      * When empty, fares default to the owner's personal account.
@@ -100,6 +105,11 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     private final Map<UUID, Long> authorizedUntil = new HashMap<>();
     /** Server-only throttle for repeated charge attempts / deny messages. */
     private final Map<UUID, Long> nextAttemptAllowed = new HashMap<>();
+    /** Server-only: manual-pay riders watched to close the gate once they cross to the far side; value
+     *  is the signed position along the facing normal at grant time. */
+    private final Map<UUID, Double> transitWatch = new HashMap<>();
+    /** Server-only: game-time at which the visual gate should swing shut. */
+    private long openUntil = 0;
 
     /** GeckoLib animation cache + the swing animations played while the gate is OPEN (by direction). */
     private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
@@ -118,10 +128,30 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     @Override
     public void tick() {
         super.tick();
-        if (level != null && !authorizedUntil.isEmpty()) {
-            long now = level.getGameTime();
-            authorizedUntil.values().removeIf(until -> now >= until);
+        if (level == null)
+            return;
+        long now = level.getGameTime();
+
+        // Server-only: end a manual-pay rider's pass once they've crossed to the far side, and close the
+        // visual gate when its timer elapses (or nobody is left to pass).
+        if (level instanceof ServerLevel && !transitWatch.isEmpty()) {
+            transitWatch.entrySet().removeIf(e -> {
+                Player rider = level.getPlayerByUUID(e.getKey());
+                if (rider == null || hasCrossed(e.getValue(), sideOf(rider))) {
+                    authorizedUntil.remove(e.getKey());
+                    return true;
+                }
+                return false;
+            });
+            if (authorizedUntil.isEmpty())
+                openUntil = now; // last rider through: swing shut now
         }
+
+        if (!authorizedUntil.isEmpty())
+            authorizedUntil.values().removeIf(until -> now >= until);
+
+        if (level instanceof ServerLevel && getBlockState().getValue(TurnstileBlock.OPEN) && now >= openUntil)
+            level.setBlock(worldPosition, getBlockState().setValue(TurnstileBlock.OPEN, false), 3);
     }
 
     // ------------------------------------------------------------------
@@ -222,15 +252,25 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         notifyUpdate();
     }
 
+    public boolean getAutoPay() {
+        return autoPay;
+    }
+
+    public void setAutoPay(boolean value) {
+        this.autoPay = value;
+        notifyUpdate();
+    }
+
     /**
      * Apply fare + charge-trusted from the GUI, then push the WHOLE configuration (owner, fare,
      * charge-trusted, deposit card, and trusted-rider cards) to every merged partner — a double gate
      * is configured as one unit. Also clears cached free-pass state so the change takes effect at once.
      */
-    public void applyConfig(int fare, boolean chargeTrusted, boolean noExit) {
+    public void applyConfig(int fare, boolean chargeTrusted, boolean noExit, boolean autoPay) {
         setFare(fare);
         this.chargeTrusted = chargeTrusted;
         this.noExit = noExit;
+        this.autoPay = autoPay;
         authorizedUntil.clear();
         nextAttemptAllowed.clear();
         notifyUpdate();
@@ -258,6 +298,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         this.owner = source.owner;
         this.chargeTrusted = source.chargeTrusted;
         this.noExit = source.noExit;
+        this.autoPay = source.autoPay;
         setFare(source.getFare());
         cardContainer.setItem(0, source.cardContainer.getItem(0).copy());
         for (int i = 0; i < trustListContainer.getContainerSize(); i++)
@@ -371,6 +412,8 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             grantPass(player, false);
             return;
         }
+        if (!autoPay)
+            return; // manual mode: walking in doesn't charge — the rider pays by card or right-click
 
         long now = serverLevel.getGameTime();
         UUID id = player.getUUID();
@@ -381,6 +424,26 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
 
         if (chargeFare(Numismatics.BANK.getAccount(player)))
             grantPass(player, false);
+        else
+            deny(player);
+    }
+
+    /** Manual payment from the rider's own bank account (empty-hand right-click when auto-pay is off). */
+    public void payFromPersonalAccount(Player player) {
+        if (!(level instanceof ServerLevel))
+            return;
+        if (isAuthorized(player))
+            return;
+        if (!isEntering(player) && noExit) {
+            playDenySound(); // exit disabled
+            return;
+        }
+        if (!chargeTrusted && isTrusted(player)) {
+            grantPassManual(player, !isEntering(player));
+            return;
+        }
+        if (chargeFare(Numismatics.BANK.getAccount(player)))
+            grantPassManual(player, !isEntering(player));
         else
             deny(player);
     }
@@ -416,10 +479,14 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             playDenySound(); // exit disabled: no card tap gets you out this way
             return;
         }
-        if (chargeFare(source))
-            grantPass(player, !isEntering(player));
-        else
+        if (chargeFare(source)) {
+            if (autoPay)
+                grantPass(player, !isEntering(player));
+            else
+                grantPassManual(player, !isEntering(player));
+        } else {
             deny(player);
+        }
     }
 
     // ------------------------------------------------------------------
@@ -451,18 +518,33 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
      * swings as one unit — while everyone else stays blocked (no tailgating).
      */
     private void grantPass(Player player, boolean reversed) {
+        grantPass(player, reversed, OPEN_DURATION, PASS_TICKS, false);
+    }
+
+    /** Manual-pay passage: the gate stays open longer (5s) and closes early once the rider crosses. */
+    private void grantPassManual(Player player, boolean reversed) {
+        grantPass(player, reversed, MANUAL_OPEN_TICKS, MANUAL_OPEN_TICKS, true);
+    }
+
+    private void grantPass(Player player, boolean reversed, int openTicks, int passTicks, boolean closeOnTransit) {
         if (level == null)
             return;
-        long until = level.getGameTime() + PASS_TICKS;
+        UUID id = player.getUUID();
+        long now = level.getGameTime();
+        double side = sideOf(player); // facing-axis only, so it's the same for every gate in the group
         for (TurnstileBlockEntity gate : mergedGroup()) {
-            gate.authorizedUntil.put(player.getUUID(), until);
-            gate.openVisual(reversed);
+            gate.authorizedUntil.put(id, now + passTicks);
+            if (closeOnTransit)
+                gate.transitWatch.put(id, side);
+            else
+                gate.transitWatch.remove(id);
+            gate.openVisual(reversed, openTicks);
             gate.notifyUpdate(); // sync authorizedUntil to clients for smooth collision prediction
         }
     }
 
     /** Swing this gate's arm open (visual only; collision is per-player via {@link #isAuthorized}). */
-    private void openVisual(boolean reversed) {
+    private void openVisual(boolean reversed, int openTicks) {
         if (level == null)
             return;
         BlockState state = getBlockState();
@@ -470,8 +552,21 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         if (state != target)
             level.setBlock(worldPosition, target, 3);
         level.playSound(null, worldPosition, SoundEvents.ARROW_HIT_PLAYER, SoundSource.BLOCKS, 0.6f, 1.2f);
-        if (!level.getBlockTicks().hasScheduledTick(worldPosition, state.getBlock()))
-            level.scheduleTick(worldPosition, state.getBlock(), OPEN_DURATION);
+        openUntil = level.getGameTime() + openTicks; // BE tick() swings it shut when this elapses
+    }
+
+    /** Signed position of the player along the gate's facing normal (negative = the entry side). */
+    private double sideOf(Player player) {
+        Direction facing = getBlockState().getValue(TurnstileBlock.HORIZONTAL_FACING);
+        Vec3i n = facing.getNormal();
+        double dx = player.getX() - (worldPosition.getX() + 0.5);
+        double dz = player.getZ() - (worldPosition.getZ() + 0.5);
+        return dx * n.getX() + dz * n.getZ();
+    }
+
+    /** True once the rider has moved to the opposite side of the gate from where they paid. */
+    private static boolean hasCrossed(double sideAtGrant, double sideNow) {
+        return sideAtGrant < 0 ? sideNow > 0.4 : sideNow < -0.4;
     }
 
     private void deny(Player player) {
@@ -511,6 +606,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             tag.putUUID("Owner", owner);
         tag.putBoolean("ChargeTrusted", chargeTrusted);
         tag.putBoolean("NoExit", noExit);
+        tag.putBoolean("AutoPay", autoPay);
         if (!cardContainer.getItem(0).isEmpty())
             tag.put("Card", cardContainer.getItem(0).save(registries));
         if (!trustListContainer.isEmpty())
@@ -535,6 +631,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         owner = tag.hasUUID("Owner") ? tag.getUUID("Owner") : null;
         chargeTrusted = tag.getBoolean("ChargeTrusted");
         noExit = tag.getBoolean("NoExit");
+        autoPay = !tag.contains("AutoPay") || tag.getBoolean("AutoPay"); // default on for pre-existing gates
 
         ItemStack card = tag.contains("Card", Tag.TAG_COMPOUND)
                 ? ItemStack.parseOptional(registries, tag.getCompound("Card"))

@@ -19,18 +19,21 @@ public class TurnstileConfigurationPacket extends BlockEntityConfigurationPacket
             ByteBufCodecs.VAR_INT, packet -> packet.fare,
             ByteBufCodecs.BOOL, packet -> packet.chargeTrusted,
             ByteBufCodecs.BOOL, packet -> packet.noExit,
+            ByteBufCodecs.BOOL, packet -> packet.autoPay,
             TurnstileConfigurationPacket::new
     );
 
     private final int fare;
     private final boolean chargeTrusted;
     private final boolean noExit;
+    private final boolean autoPay;
 
-    public TurnstileConfigurationPacket(BlockPos pos, int fare, boolean chargeTrusted, boolean noExit) {
+    public TurnstileConfigurationPacket(BlockPos pos, int fare, boolean chargeTrusted, boolean noExit, boolean autoPay) {
         super(pos);
         this.fare = fare;
         this.chargeTrusted = chargeTrusted;
         this.noExit = noExit;
+        this.autoPay = autoPay;
     }
 
     @Override
@@ -47,6 +50,6 @@ public class TurnstileConfigurationPacket extends BlockEntityConfigurationPacket
     protected void applySettings(ServerPlayer player, TurnstileBlockEntity be) {
         if (!be.isTrusted(player))
             return;
-        be.applyConfig(fare, chargeTrusted, noExit);
+        be.applyConfig(fare, chargeTrusted, noExit, autoPay);
     }
 }

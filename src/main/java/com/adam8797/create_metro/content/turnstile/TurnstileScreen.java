@@ -22,13 +22,14 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
     private int editFare;
     private boolean chargeTrusted;
     private boolean noExit;
+    private boolean autoPay;
 
     public TurnstileScreen(TurnstileMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
         this.imageWidth = 176;
-        this.imageHeight = 232;
+        this.imageHeight = 254;
         this.titleLabelY = 6;
-        this.inventoryLabelY = 138;
+        this.inventoryLabelY = 160;
     }
 
     @Override
@@ -37,6 +38,7 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
         editFare = menu.contentHolder != null ? menu.contentHolder.getFare() : 0;
         chargeTrusted = menu.contentHolder != null && menu.contentHolder.getChargeTrusted();
         noExit = menu.contentHolder != null && menu.contentHolder.getNoExit();
+        autoPay = menu.contentHolder == null || menu.contentHolder.getAutoPay();
 
         int x = leftPos;
         int y = topPos;
@@ -44,13 +46,18 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
                 .bounds(x + 8, y + 30, 20, 20).build());
         addRenderableWidget(Button.builder(Component.literal("+"), b -> adjustFare(step()))
                 .bounds(x + 84, y + 30, 20, 20).build());
-        addRenderableWidget(Checkbox.builder(Component.translatable("create_metro.turnstile.charge_trusted"), font)
+        addRenderableWidget(Checkbox.builder(Component.translatable("create_metro.turnstile.auto_pay"), font)
                 .pos(x + 8, y + 54)
+                .selected(autoPay)
+                .onValueChange((cb, value) -> autoPay = value)
+                .build());
+        addRenderableWidget(Checkbox.builder(Component.translatable("create_metro.turnstile.charge_trusted"), font)
+                .pos(x + 8, y + 76)
                 .selected(chargeTrusted)
                 .onValueChange((cb, value) -> chargeTrusted = value)
                 .build());
         addRenderableWidget(Checkbox.builder(Component.translatable("create_metro.turnstile.no_exit"), font)
-                .pos(x + 8, y + 76)
+                .pos(x + 8, y + 98)
                 .selected(noExit)
                 .onValueChange((cb, value) -> noExit = value)
                 .build());
@@ -81,12 +88,12 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
 
         slot(g, x + 150, y + 30);
         for (int i = 0; i < TurnstileMenu.ID_SLOT_COUNT; i++)
-            slot(g, x + 8 + i * 18, y + 112);
+            slot(g, x + 8 + i * 18, y + 134);
         for (int row = 0; row < 3; row++)
             for (int col = 0; col < 9; col++)
-                slot(g, x + 8 + col * 18, y + 150 + row * 18);
+                slot(g, x + 8 + col * 18, y + 172 + row * 18);
         for (int col = 0; col < 9; col++)
-            slot(g, x + 8 + col * 18, y + 208);
+            slot(g, x + 8 + col * 18, y + 230);
     }
 
     private void slot(GuiGraphics g, int itemX, int itemY) {
@@ -103,7 +110,7 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
         g.drawCenteredString(font, Component.translatable("create_metro.turnstile.fare_amount", editFare), 56, 36, 0xFFFFFF);
 
         g.drawString(font, Component.translatable("create_metro.turnstile.deposit_label"), 110, 20, TEXT, false);
-        g.drawString(font, Component.translatable("create_metro.turnstile.riders_label"), 8, 100, TEXT, false);
+        g.drawString(font, Component.translatable("create_metro.turnstile.riders_label"), 8, 122, TEXT, false);
     }
 
     @Override
@@ -118,6 +125,6 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
         super.removed();
         if (menu.contentHolder != null)
             CatnipServices.NETWORK.sendToServer(
-                    new TurnstileConfigurationPacket(menu.contentHolder.getBlockPos(), editFare, chargeTrusted, noExit));
+                    new TurnstileConfigurationPacket(menu.contentHolder.getBlockPos(), editFare, chargeTrusted, noExit, autoPay));
     }
 }

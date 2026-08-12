@@ -54,8 +54,8 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
 
     // Closed barrier: a slab that blocks passage along the facing axis. Two blocks tall so it can't be
     // jumped over (the visual model is still one block tall — taller art comes later).
-    private static final VoxelShape SHAPE_BLOCKS_Z = Shapes.box(0, 0, 0.375, 1, 2.0, 0.625);
-    private static final VoxelShape SHAPE_BLOCKS_X = Shapes.box(0.375, 0, 0, 0.625, 2.0, 1);
+    private static final VoxelShape SHAPE_BLOCKS_Z = Shapes.box(0, 0, 0.25, 1, 2.0, 0.75);
+    private static final VoxelShape SHAPE_BLOCKS_X = Shapes.box(0.25, 0, 0, 0.75, 2.0, 1);
 
     public TurnstileBlock(Properties properties) {
         super(properties);
@@ -251,6 +251,10 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
 
         if (isTrusted(player, level, pos)) {
             openConfig(player, pos, be);
+            return InteractionResult.CONSUME;
+        }
+        if (!be.getAutoPay()) {
+            be.payFromPersonalAccount(player); // manual mode: pay from your own account
             return InteractionResult.CONSUME;
         }
         be.showStatus(player);

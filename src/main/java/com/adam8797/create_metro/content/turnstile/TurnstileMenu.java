@@ -47,8 +47,8 @@ public class TurnstileMenu extends MenuBase<TurnstileBlockEntity> {
     protected void addSlots() {
         addSlot(new CardSlot.BoundCardSlot(contentHolder.cardContainer, 0, 150, 30));
         for (int i = 0; i < ID_SLOT_COUNT; i++)
-            addSlot(new IDCardSlot.BoundIDCardSlot(contentHolder.trustListContainer, i, 8 + i * 18, 112));
-        addPlayerSlots(8, 150);
+            addSlot(new IDCardSlot.BoundIDCardSlot(contentHolder.trustListContainer, i, 8 + i * 18, 134));
+        addPlayerSlots(8, 172);
     }
 
     @Override
