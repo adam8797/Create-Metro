@@ -1,6 +1,7 @@
 package com.adam8797.create_metro.content.turnstile;
 
 import com.adam8797.create_metro.CreateMetro;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import software.bernie.geckolib.model.GeoModel;
 
@@ -24,5 +25,12 @@ public class TurnstileGeoModel extends GeoModel<TurnstileBlockEntity> {
     @Override
     public ResourceLocation getAnimationResource(TurnstileBlockEntity animatable) {
         return ANIMATION;
+    }
+
+    @Override
+    public RenderType getRenderType(TurnstileBlockEntity animatable, ResourceLocation texture) {
+        // The doors use a semi-transparent texture; the default entityCutoutNoCull only alpha-tests
+        // (rendering partial alpha as solid), so use a translucent type that actually blends.
+        return RenderType.entityTranslucent(texture);
     }
 }
