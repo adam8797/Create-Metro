@@ -1,0 +1,28 @@
+{
+  "__comment": "PLACEHOLDER GeckoLib model — replace with your Blockbench GeckoLib export. Keep the top-level bones named 'left' and 'right' (the renderer hides them per merge), each parenting its post/coins/arm; the arm bones must be 'left_arm' / 'right_arm' (the animation rotates them).",
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.turnstile",
+        "texture_width": 64,
+        "texture_height": 64,
+        "visible_bounds_width": 3,
+        "visible_bounds_height": 2.5,
+        "visible_bounds_offset": [0, 0.75, 0]
+      },
+      "bones": [
+        { "name": "left", "pivot": [0, 0, 0] },
+        { "name": "left_post", "parent": "left", "pivot": [1, 0, 8],
+          "cubes": [ { "origin": [0, 0, 4], "size": [2, 16, 8], "uv": [0, 0] } ] },
+        { "name": "left_arm", "parent": "left", "pivot": [2, 3, 8],
+          "cubes": [ { "origin": [2, 2, 7.5], "size": [5.5, 12, 1], "uv": [24, 0] } ] },
+        { "name": "right", "pivot": [0, 0, 0] },
+        { "name": "right_post", "parent": "right", "pivot": [15, 0, 8],
+          "cubes": [ { "origin": [14, 0, 4], "size": [2, 16, 8], "uv": [0, 24] } ] },
+        { "name": "right_arm", "parent": "right", "pivot": [14, 3, 8],
+          "cubes": [ { "origin": [8.5, 2, 7.5], "size": [5.5, 12, 1], "uv": [24, 24] } ] }
+      ]
+    }
+  ]
+}

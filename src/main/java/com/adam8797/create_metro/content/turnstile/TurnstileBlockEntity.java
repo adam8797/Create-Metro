@@ -14,8 +14,6 @@ import dev.ithundxr.createnumismatics.content.bank.CardItem;
 import dev.ithundxr.createnumismatics.content.backend.trust_list.TrustListContainer;
 import dev.ithundxr.createnumismatics.registry.NumismaticsTags;
 import dev.ithundxr.createnumismatics.util.Utils;
-import net.createmod.catnip.animation.LerpedFloat;
-import net.createmod.catnip.animation.LerpedFloat.Chaser;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -41,6 +39,14 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import software.bernie.geckolib.animatable.GeoBlockEntity;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -51,7 +57,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, MenuProvider {
+public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, MenuProvider, GeoBlockEntity {
 
     /** How long (ticks) the arm stays visually swung open after a successful payment. */
     public static final int OPEN_DURATION = 30;
@@ -92,8 +98,9 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     /** Server-only throttle for repeated charge attempts / deny messages. */
     private final Map<UUID, Long> nextAttemptAllowed = new HashMap<>();
 
-    /** Client-side door swing animation, 0 (closed) .. 1 (open). Chased from the OPEN block state. */
-    public final LerpedFloat swing = LerpedFloat.linear().startWithValue(0);
+    /** GeckoLib animation cache + the swing animation played while the gate is OPEN. */
+    private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
+    private static final RawAnimation OPEN_ANIM = RawAnimation.begin().thenPlayAndHold("open");
 
     public TurnstileBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -102,12 +109,30 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     @Override
     public void tick() {
         super.tick();
-        swing.chase(getBlockState().getValue(TurnstileBlock.OPEN) ? 1 : 0, 0.25f, Chaser.EXP);
-        swing.tickChaser();
         if (level != null && !authorizedUntil.isEmpty()) {
             long now = level.getGameTime();
             authorizedUntil.values().removeIf(until -> now >= until);
         }
+    }
+
+    // ------------------------------------------------------------------
+    // GeckoLib animation
+    // ------------------------------------------------------------------
+
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        controllers.add(new AnimationController<>(this, "swing", 5, this::swingState));
+    }
+
+    private PlayState swingState(AnimationState<TurnstileBlockEntity> state) {
+        if (getBlockState().getValue(TurnstileBlock.OPEN))
+            return state.setAndContinue(OPEN_ANIM);
+        return PlayState.STOP; // transition back to the closed pose
+    }
+
+    @Override
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+        return geoCache;
     }
 
     /** True while the player is allowed to walk through (barrier is empty only for them). */

@@ -1,3 +1,5 @@
 {
-  "parent": "create_metro:block/turnstile"
+  "__comment": "Placeholder inventory model (the in-world block is GeckoLib-rendered). Swap for a GeoItem render or a proper static model later.",
+  "parent": "minecraft:block/cube_all",
+  "textures": { "all": "create:block/andesite_casing" }
 }

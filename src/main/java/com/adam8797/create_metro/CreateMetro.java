@@ -48,9 +48,6 @@ public class CreateMetro {
         MetroPackets.register();
 
         MetroConfigs.register(modContainer);
-
-        if (net.neoforged.fml.loading.FMLEnvironment.dist == net.neoforged.api.distmarker.Dist.CLIENT)
-            MetroClient.init(modEventBus);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {

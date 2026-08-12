@@ -1,0 +1,14 @@
+{
+  "__comment": "PLACEHOLDER — replace with your Blockbench animation export. The controller plays 'open' when the gate opens and transitions back when it closes.",
+  "format_version": "1.8.0",
+  "animations": {
+    "open": {
+      "loop": "hold_on_last_frame",
+      "animation_length": 0.5,
+      "bones": {
+        "left_arm":  { "rotation": { "0.0": [0, 0, 0], "0.5": [0, 90, 0] } },
+        "right_arm": { "rotation": { "0.0": [0, 0, 0], "0.5": [0, -90, 0] } }
+      }
+    }
+  }
+}
