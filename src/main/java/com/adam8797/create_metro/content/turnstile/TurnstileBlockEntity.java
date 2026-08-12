@@ -102,6 +102,9 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
     private static final RawAnimation OPEN_FORWARD = RawAnimation.begin().thenPlayAndHold("open");
     private static final RawAnimation OPEN_REVERSED = RawAnimation.begin().thenPlayAndHold("open_reversed");
+    // Held closed pose. We transition to this rather than returning PlayState.STOP, which would snap
+    // the doors to rest in a single frame instead of swinging them shut.
+    private static final RawAnimation CLOSED = RawAnimation.begin().thenLoop("closed");
 
     public TurnstileBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -122,13 +125,13 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "swing", 5, this::swingState));
+        controllers.add(new AnimationController<>(this, "swing", 3, this::swingState));
     }
 
     private PlayState swingState(AnimationState<TurnstileBlockEntity> state) {
         BlockState bs = getBlockState();
         if (!bs.getValue(TurnstileBlock.OPEN))
-            return PlayState.STOP; // transition back to the closed pose
+            return state.setAndContinue(CLOSED); // transition (swing) back to closed, don't snap
         // REVERSED gates (exit direction) swing the other way.
         return state.setAndContinue(bs.getValue(TurnstileBlock.REVERSED) ? OPEN_REVERSED : OPEN_FORWARD);
     }
