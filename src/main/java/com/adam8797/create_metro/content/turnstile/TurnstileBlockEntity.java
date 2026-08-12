@@ -102,9 +102,11 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
     private static final RawAnimation OPEN_FORWARD = RawAnimation.begin().thenPlayAndHold("open");
     private static final RawAnimation OPEN_REVERSED = RawAnimation.begin().thenPlayAndHold("open_reversed");
-    // Held closed pose. We transition to this rather than returning PlayState.STOP, which would snap
-    // the doors to rest in a single frame instead of swinging them shut.
-    private static final RawAnimation CLOSED = RawAnimation.begin().thenLoop("closed");
+    private static final RawAnimation CLOSE_FORWARD = RawAnimation.begin().thenPlayAndHold("close");
+    private static final RawAnimation CLOSE_REVERSED = RawAnimation.begin().thenPlayAndHold("close_reversed");
+    // Client-only: the close animation starts from the open pose, so we only play it once the gate has
+    // actually opened. Before that (fresh load / idle) the rest pose is already closed - don't snap.
+    private boolean hasOpened = false;
 
     public TurnstileBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -130,10 +132,14 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
 
     private PlayState swingState(AnimationState<TurnstileBlockEntity> state) {
         BlockState bs = getBlockState();
-        if (!bs.getValue(TurnstileBlock.OPEN))
-            return state.setAndContinue(CLOSED); // transition (swing) back to closed, don't snap
-        // REVERSED gates (exit direction) swing the other way.
-        return state.setAndContinue(bs.getValue(TurnstileBlock.REVERSED) ? OPEN_REVERSED : OPEN_FORWARD);
+        boolean reversed = bs.getValue(TurnstileBlock.REVERSED); // exit gates swing the other way
+        if (bs.getValue(TurnstileBlock.OPEN)) {
+            hasOpened = true;
+            return state.setAndContinue(reversed ? OPEN_REVERSED : OPEN_FORWARD);
+        }
+        if (!hasOpened)
+            return PlayState.STOP; // never opened since load: already at the closed rest pose
+        return state.setAndContinue(reversed ? CLOSE_REVERSED : CLOSE_FORWARD);
     }
 
     @Override
