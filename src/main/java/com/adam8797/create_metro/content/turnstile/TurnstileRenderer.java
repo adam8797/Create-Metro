@@ -4,6 +4,7 @@ import com.adam8797.create_metro.MetroPartialModels;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.simibubi.create.foundation.blockEntity.renderer.SafeBlockEntityRenderer;
+import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import net.createmod.catnip.render.CachedBuffers;
 import net.createmod.catnip.render.SuperByteBuffer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -14,10 +15,16 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Renders the turnstile's fare-arm as an animated leaf that swings from the outer pillar. The static
- * model (posts + arrow) is a normal block model; only the arm lives here so it can rotate smoothly.
+ * Renders the turnstile's two fare-arms as animated leaves, each swinging from its own outer pillar.
+ * The static model (posts + coins) is a normal block model; the arms live here so they can rotate.
+ * A merged gate hides the arm on its merged (inner) side.
  */
 public class TurnstileRenderer extends SafeBlockEntityRenderer<TurnstileBlockEntity> {
+
+    // Hinge pivots in block-local space (matching the model's rotation origins [2,3,8] and [14,3,8]).
+    private static final float LEFT_PIVOT_X = 2f / 16f;
+    private static final float RIGHT_PIVOT_X = 14f / 16f;
+    private static final float PIVOT_Z = 8f / 16f;
 
     public TurnstileRenderer(BlockEntityRendererProvider.Context context) {}
 
@@ -26,23 +33,27 @@ public class TurnstileRenderer extends SafeBlockEntityRenderer<TurnstileBlockEnt
                               MultiBufferSource buffer, int light, int overlay) {
         BlockState state = be.getBlockState();
         Direction facing = state.getValue(TurnstileBlock.HORIZONTAL_FACING);
-        boolean hingeRight = state.getValue(TurnstileBlock.MERGE_LEFT) && !state.getValue(TurnstileBlock.MERGE_RIGHT);
+        float angle = be.swing.getValue(partialTicks) * 90f; // 0 closed .. 90 open
         boolean forward = !state.getValue(TurnstileBlock.REVERSED);
 
-        float angle = be.swing.getValue(partialTicks) * 90f; // 0 closed .. 90 open
+        // Left leaf hinges at the left pillar; right leaf at the right pillar. Sign mirrors per side.
+        if (!state.getValue(TurnstileBlock.MERGE_LEFT))
+            renderArm(ms, buffer, light, overlay, state, MetroPartialModels.TURNSTILE_ARM_LEFT,
+                    facing, LEFT_PIVOT_X, (forward ? 1f : -1f) * angle);
+        if (!state.getValue(TurnstileBlock.MERGE_RIGHT))
+            renderArm(ms, buffer, light, overlay, state, MetroPartialModels.TURNSTILE_ARM_RIGHT,
+                    facing, RIGHT_PIVOT_X, (forward ? -1f : 1f) * angle);
+    }
 
-        // Pivot on the outer pillar, in the model's local (north-facing) space.
-        float pivotX = hingeRight ? 13f / 16f : 3f / 16f;
-        float pivotZ = 8f / 16f;
-        float sign = (hingeRight ? -1f : 1f) * (forward ? 1f : -1f);
-
-        SuperByteBuffer arm = CachedBuffers.partial(MetroPartialModels.TURNSTILE_ARM, state);
-        arm.light(light)
+    private void renderArm(PoseStack ms, MultiBufferSource buffer, int light, int overlay, BlockState state,
+                           PartialModel arm, Direction facing, float pivotX, float degrees) {
+        CachedBuffers.partial(arm, state)
+                .light(light)
                 .overlay(overlay)
                 .rotateCentered(Mth.DEG_TO_RAD * (180 - facing.toYRot()), Axis.YP)
-                .translate(pivotX, 0, pivotZ)
-                .rotateYDegrees(sign * angle)
-                .translateBack(pivotX, 0, pivotZ)
-                .renderInto(ms, buffer.getBuffer(RenderType.cutoutMipped()));
+                .translate(pivotX, 0, PIVOT_Z)
+                .rotateYDegrees(degrees)
+                .translateBack(pivotX, 0, PIVOT_Z)
+                .renderInto(ms, buffer.getBuffer(RenderType.translucent()));
     }
 }

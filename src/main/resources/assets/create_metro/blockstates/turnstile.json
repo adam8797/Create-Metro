@@ -1,243 +1,243 @@
 {
   "variants": {
     "facing=north,open=false,merge_left=false,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile"
+      "model": "create_metro:block/turnstile_body"
     },
     "facing=north,open=false,merge_left=false,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile"
+      "model": "create_metro:block/turnstile_body"
     },
     "facing=north,open=false,merge_left=false,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mr"
+      "model": "create_metro:block/turnstile_body_mr"
     },
     "facing=north,open=false,merge_left=false,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mr"
+      "model": "create_metro:block/turnstile_body_mr"
     },
     "facing=north,open=false,merge_left=true,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile_ml"
+      "model": "create_metro:block/turnstile_body_ml"
     },
     "facing=north,open=false,merge_left=true,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile_ml"
+      "model": "create_metro:block/turnstile_body_ml"
     },
     "facing=north,open=false,merge_left=true,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mlr"
+      "model": "create_metro:block/turnstile_body_mlr"
     },
     "facing=north,open=false,merge_left=true,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mlr"
+      "model": "create_metro:block/turnstile_body_mlr"
     },
     "facing=north,open=true,merge_left=false,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile"
+      "model": "create_metro:block/turnstile_body"
     },
     "facing=north,open=true,merge_left=false,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile"
+      "model": "create_metro:block/turnstile_body"
     },
     "facing=north,open=true,merge_left=false,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mr"
+      "model": "create_metro:block/turnstile_body_mr"
     },
     "facing=north,open=true,merge_left=false,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mr"
+      "model": "create_metro:block/turnstile_body_mr"
     },
     "facing=north,open=true,merge_left=true,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile_ml"
+      "model": "create_metro:block/turnstile_body_ml"
     },
     "facing=north,open=true,merge_left=true,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile_ml"
+      "model": "create_metro:block/turnstile_body_ml"
     },
     "facing=north,open=true,merge_left=true,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mlr"
+      "model": "create_metro:block/turnstile_body_mlr"
     },
     "facing=north,open=true,merge_left=true,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mlr"
+      "model": "create_metro:block/turnstile_body_mlr"
     },
     "facing=east,open=false,merge_left=false,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile",
+      "model": "create_metro:block/turnstile_body",
       "y": 90
     },
     "facing=east,open=false,merge_left=false,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile",
+      "model": "create_metro:block/turnstile_body",
       "y": 90
     },
     "facing=east,open=false,merge_left=false,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mr",
+      "model": "create_metro:block/turnstile_body_mr",
       "y": 90
     },
     "facing=east,open=false,merge_left=false,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mr",
+      "model": "create_metro:block/turnstile_body_mr",
       "y": 90
     },
     "facing=east,open=false,merge_left=true,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile_ml",
+      "model": "create_metro:block/turnstile_body_ml",
       "y": 90
     },
     "facing=east,open=false,merge_left=true,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile_ml",
+      "model": "create_metro:block/turnstile_body_ml",
       "y": 90
     },
     "facing=east,open=false,merge_left=true,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mlr",
+      "model": "create_metro:block/turnstile_body_mlr",
       "y": 90
     },
     "facing=east,open=false,merge_left=true,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mlr",
+      "model": "create_metro:block/turnstile_body_mlr",
       "y": 90
     },
     "facing=east,open=true,merge_left=false,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile",
+      "model": "create_metro:block/turnstile_body",
       "y": 90
     },
     "facing=east,open=true,merge_left=false,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile",
+      "model": "create_metro:block/turnstile_body",
       "y": 90
     },
     "facing=east,open=true,merge_left=false,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mr",
+      "model": "create_metro:block/turnstile_body_mr",
       "y": 90
     },
     "facing=east,open=true,merge_left=false,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mr",
+      "model": "create_metro:block/turnstile_body_mr",
       "y": 90
     },
     "facing=east,open=true,merge_left=true,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile_ml",
+      "model": "create_metro:block/turnstile_body_ml",
       "y": 90
     },
     "facing=east,open=true,merge_left=true,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile_ml",
+      "model": "create_metro:block/turnstile_body_ml",
       "y": 90
     },
     "facing=east,open=true,merge_left=true,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mlr",
+      "model": "create_metro:block/turnstile_body_mlr",
       "y": 90
     },
     "facing=east,open=true,merge_left=true,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mlr",
+      "model": "create_metro:block/turnstile_body_mlr",
       "y": 90
     },
     "facing=south,open=false,merge_left=false,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile",
+      "model": "create_metro:block/turnstile_body",
       "y": 180
     },
     "facing=south,open=false,merge_left=false,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile",
+      "model": "create_metro:block/turnstile_body",
       "y": 180
     },
     "facing=south,open=false,merge_left=false,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mr",
+      "model": "create_metro:block/turnstile_body_mr",
       "y": 180
     },
     "facing=south,open=false,merge_left=false,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mr",
+      "model": "create_metro:block/turnstile_body_mr",
       "y": 180
     },
     "facing=south,open=false,merge_left=true,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile_ml",
+      "model": "create_metro:block/turnstile_body_ml",
       "y": 180
     },
     "facing=south,open=false,merge_left=true,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile_ml",
+      "model": "create_metro:block/turnstile_body_ml",
       "y": 180
     },
     "facing=south,open=false,merge_left=true,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mlr",
+      "model": "create_metro:block/turnstile_body_mlr",
       "y": 180
     },
     "facing=south,open=false,merge_left=true,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mlr",
+      "model": "create_metro:block/turnstile_body_mlr",
       "y": 180
     },
     "facing=south,open=true,merge_left=false,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile",
+      "model": "create_metro:block/turnstile_body",
       "y": 180
     },
     "facing=south,open=true,merge_left=false,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile",
+      "model": "create_metro:block/turnstile_body",
       "y": 180
     },
     "facing=south,open=true,merge_left=false,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mr",
+      "model": "create_metro:block/turnstile_body_mr",
       "y": 180
     },
     "facing=south,open=true,merge_left=false,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mr",
+      "model": "create_metro:block/turnstile_body_mr",
       "y": 180
     },
     "facing=south,open=true,merge_left=true,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile_ml",
+      "model": "create_metro:block/turnstile_body_ml",
       "y": 180
     },
     "facing=south,open=true,merge_left=true,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile_ml",
+      "model": "create_metro:block/turnstile_body_ml",
       "y": 180
     },
     "facing=south,open=true,merge_left=true,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mlr",
+      "model": "create_metro:block/turnstile_body_mlr",
       "y": 180
     },
     "facing=south,open=true,merge_left=true,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mlr",
+      "model": "create_metro:block/turnstile_body_mlr",
       "y": 180
     },
     "facing=west,open=false,merge_left=false,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile",
+      "model": "create_metro:block/turnstile_body",
       "y": 270
     },
     "facing=west,open=false,merge_left=false,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile",
+      "model": "create_metro:block/turnstile_body",
       "y": 270
     },
     "facing=west,open=false,merge_left=false,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mr",
+      "model": "create_metro:block/turnstile_body_mr",
       "y": 270
     },
     "facing=west,open=false,merge_left=false,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mr",
+      "model": "create_metro:block/turnstile_body_mr",
       "y": 270
     },
     "facing=west,open=false,merge_left=true,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile_ml",
+      "model": "create_metro:block/turnstile_body_ml",
       "y": 270
     },
     "facing=west,open=false,merge_left=true,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile_ml",
+      "model": "create_metro:block/turnstile_body_ml",
       "y": 270
     },
     "facing=west,open=false,merge_left=true,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mlr",
+      "model": "create_metro:block/turnstile_body_mlr",
       "y": 270
     },
     "facing=west,open=false,merge_left=true,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mlr",
+      "model": "create_metro:block/turnstile_body_mlr",
       "y": 270
     },
     "facing=west,open=true,merge_left=false,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile",
+      "model": "create_metro:block/turnstile_body",
       "y": 270
     },
     "facing=west,open=true,merge_left=false,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile",
+      "model": "create_metro:block/turnstile_body",
       "y": 270
     },
     "facing=west,open=true,merge_left=false,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mr",
+      "model": "create_metro:block/turnstile_body_mr",
       "y": 270
     },
     "facing=west,open=true,merge_left=false,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mr",
+      "model": "create_metro:block/turnstile_body_mr",
       "y": 270
     },
     "facing=west,open=true,merge_left=true,merge_right=false,reversed=false": {
-      "model": "create_metro:block/turnstile_ml",
+      "model": "create_metro:block/turnstile_body_ml",
       "y": 270
     },
     "facing=west,open=true,merge_left=true,merge_right=false,reversed=true": {
-      "model": "create_metro:block/turnstile_ml",
+      "model": "create_metro:block/turnstile_body_ml",
       "y": 270
     },
     "facing=west,open=true,merge_left=true,merge_right=true,reversed=false": {
-      "model": "create_metro:block/turnstile_mlr",
+      "model": "create_metro:block/turnstile_body_mlr",
       "y": 270
     },
     "facing=west,open=true,merge_left=true,merge_right=true,reversed=true": {
-      "model": "create_metro:block/turnstile_mlr",
+      "model": "create_metro:block/turnstile_body_mlr",
       "y": 270
     }
   }
