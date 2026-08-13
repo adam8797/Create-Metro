@@ -24,6 +24,7 @@ public class MetroCreativeTabs {
 
     public static final List<ItemProviderEntry<?, ?>> ITEMS = List.of(
             MetroBlocks.TURNSTILE,
+            MetroBlocks.TICKET_PRINTER,
             MetroItems.QUICK_TRIP_TICKET
     );
 

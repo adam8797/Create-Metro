@@ -1,5 +1,6 @@
 package com.adam8797.create_metro;
 
+import com.adam8797.create_metro.content.ticketprinter.TicketPrinterBlock;
 import com.adam8797.create_metro.content.turnstile.TurnstileBlock;
 import com.simibubi.create.AllTags.AllBlockTags;
 import com.simibubi.create.foundation.data.CreateRegistrate;
@@ -28,6 +29,21 @@ public class MetroBlocks {
             // create_metro:block/turnstile texture (which doesn't exist) and crashing runData.
             .blockstate((c, p) -> { })
             .lang("Turnstile")
+            .simpleItem()
+            .register();
+
+    public static final BlockEntry<TicketPrinterBlock> TICKET_PRINTER = REGISTRATE.block("ticket_printer", TicketPrinterBlock::new)
+            .initialProperties(SharedProperties::softMetal)
+            .properties(p -> p.mapColor(MapColor.COLOR_GRAY))
+            .properties(p -> p.sound(SoundType.NETHERITE_BLOCK))
+            .properties(p -> p.strength(1.5F, 6.0F))
+            .properties(BlockBehaviour.Properties::noOcclusion)
+            .transform(pickaxeOnly())
+            .tag(AllBlockTags.NON_MOVABLE.tag)
+            // Blockstate + model are hand-authored placeholders (GeckoLib animation to come); no-op
+            // data-gen stops Registrate emitting a cube_all model that crashes runData.
+            .blockstate((c, p) -> { })
+            .lang("Ticket Printer")
             .simpleItem()
             .register();
 

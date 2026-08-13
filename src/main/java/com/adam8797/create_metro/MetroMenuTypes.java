@@ -1,5 +1,7 @@
 package com.adam8797.create_metro;
 
+import com.adam8797.create_metro.content.ticketprinter.TicketPrinterMenu;
+import com.adam8797.create_metro.content.ticketprinter.TicketPrinterScreen;
 import com.adam8797.create_metro.content.turnstile.TurnstileMenu;
 import com.adam8797.create_metro.content.turnstile.TurnstileScreen;
 import com.simibubi.create.foundation.data.CreateRegistrate;
@@ -17,6 +19,12 @@ public class MetroMenuTypes {
             "turnstile",
             TurnstileMenu::new,
             () -> TurnstileScreen::new
+    );
+
+    public static final MenuEntry<TicketPrinterMenu> TICKET_PRINTER = register(
+            "ticket_printer",
+            TicketPrinterMenu::new,
+            () -> TicketPrinterScreen::new
     );
 
     private static <C extends AbstractContainerMenu, S extends Screen & MenuAccess<C>> MenuEntry<C> register(

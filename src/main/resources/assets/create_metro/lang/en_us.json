@@ -2,6 +2,13 @@
   "create_metro.creative_tab": "Create: Metro",
 
   "block.create_metro.turnstile": "Turnstile",
+  "block.create_metro.ticket_printer": "Ticket Printer",
+  "item.create_metro.quick_trip_ticket": "Quick Trip Ticket",
+
+  "create_metro.ticket_printer.station": "Station",
+  "create_metro.ticket_printer.ticket_name": "Ticket name",
+  "create_metro.ticket_printer.owners_label": "Owners",
+  "create_metro.ticket_printer.no_station": "No station configured",
 
   "create_metro.turnstile.station": "Station",
   "create_metro.turnstile.fare_ticket": "Ticket",
