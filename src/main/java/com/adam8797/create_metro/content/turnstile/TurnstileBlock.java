@@ -58,6 +58,15 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
     private static final VoxelShape SHAPE_BLOCKS_Z = Shapes.box(0, 0, 0.25, 1, 2.0, 0.75);
     private static final VoxelShape SHAPE_BLOCKS_X = Shapes.box(0.25, 0, 0, 0.75, 2.0, 1);
 
+    // Support shape: full faces on the two post sides (perpendicular to facing) so fences/walls connect
+    // to the posts. Not the collision shape — it only feeds isFaceSturdy. Posts sit at the block edges.
+    private static final VoxelShape SUPPORT_Z = Shapes.or( // facing N/S -> posts on the E/W faces
+            Shapes.box(0, 0, 0, 0.125, 1, 1),
+            Shapes.box(0.875, 0, 0, 1, 1, 1));
+    private static final VoxelShape SUPPORT_X = Shapes.or( // facing E/W -> posts on the N/S faces
+            Shapes.box(0, 0, 0, 1, 1, 0.125),
+            Shapes.box(0, 0, 0.875, 1, 1, 1));
+
     public TurnstileBlock(Properties properties) {
         super(properties);
         registerDefaultState(defaultBlockState()
@@ -91,6 +100,13 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
                 && level.getBlockEntity(pos) instanceof TurnstileBlockEntity be && be.isAuthorized(player))
             return Shapes.empty();
         return barrierShape(state);
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    public @NotNull VoxelShape getBlockSupportShape(BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos) {
+        // Present sturdy full faces on the post sides so adjacent fences/walls connect to the gate.
+        return state.getValue(HORIZONTAL_FACING).getAxis() == Direction.Axis.Z ? SUPPORT_Z : SUPPORT_X;
     }
 
     // ------------------------------------------------------------------
