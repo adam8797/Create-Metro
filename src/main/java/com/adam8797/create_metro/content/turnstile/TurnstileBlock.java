@@ -251,13 +251,10 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
             be.showStatus(player);
             return InteractionResult.SUCCESS;
         }
-        // Plain empty-hand right-click: manual-pay from your own account, else just show the status.
-        if (!be.getAutoPay()) {
-            be.payFromPersonalAccount(player);
-            return InteractionResult.CONSUME;
-        }
-        be.showStatus(player);
-        return InteractionResult.SUCCESS;
+        // Plain empty-hand right-click always pays from your own account — auto-pay is a convenience,
+        // not a restriction. (Status is available via shift+click for non-trusted players.)
+        be.payFromPersonalAccount(player);
+        return InteractionResult.CONSUME;
     }
 
     private static void openConfig(Player player, BlockPos pos, TurnstileBlockEntity be) {

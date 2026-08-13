@@ -490,14 +490,10 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             playDenySound(); // exit disabled: no card tap gets you out this way
             return;
         }
-        if (chargeFare(source)) {
-            if (autoPay)
-                grantPass(player, !isEntering(player));
-            else
-                grantPassManual(player, !isEntering(player));
-        } else {
+        if (chargeFare(source))
+            grantPassManual(player, !isEntering(player)); // a deliberate tap gets the click-then-walk grace
+        else
             deny(player);
-        }
     }
 
     // ------------------------------------------------------------------
