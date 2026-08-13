@@ -38,21 +38,22 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
         this.imageHeight = 280;
         this.titleLabelY = 6;
         this.inventoryLabelY = 186;
+        // Load edit state ONCE here; init() re-runs on resize and must not clobber unsaved edits.
+        editFare = menu.contentHolder != null ? menu.contentHolder.getFare() : 0;
+        chargeTrusted = menu.contentHolder != null && menu.contentHolder.getChargeTrusted();
+        noExit = menu.contentHolder != null && menu.contentHolder.getNoExit();
+        autoPay = menu.contentHolder == null || menu.contentHolder.getAutoPay();
     }
 
     @Override
     protected void init() {
         super.init();
-        editFare = menu.contentHolder != null ? menu.contentHolder.getFare() : 0;
-        chargeTrusted = menu.contentHolder != null && menu.contentHolder.getChargeTrusted();
-        noExit = menu.contentHolder != null && menu.contentHolder.getNoExit();
-        autoPay = menu.contentHolder == null || menu.contentHolder.getAutoPay();
-
         int x = leftPos;
         int y = topPos;
 
-        // Station name field (top).
-        String station = menu.contentHolder != null ? menu.contentHolder.getStation() : "";
+        // Station name field (top). Keep the current text across a resize (init re-runs).
+        String station = stationBox != null ? stationBox.getValue()
+                : (menu.contentHolder != null ? menu.contentHolder.getStation() : "");
         stationBox = new EditBox(font, x + 8, y + 30, 160, 14, Component.translatable("create_metro.turnstile.station"));
         stationBox.setMaxLength(64);
         stationBox.setValue(station);

@@ -30,14 +30,18 @@ public class TicketPrinterScreen extends AbstractContainerScreen<TicketPrinterMe
         this.imageHeight = 252;
         this.titleLabelY = 6;
         this.inventoryLabelY = 158;
+        // Load edit state ONCE here; init() re-runs on resize and must not clobber unsaved edits.
+        editFare = Math.max(1, menu.contentHolder != null ? menu.contentHolder.getFare() : 1);
     }
 
     @Override
     protected void init() {
         super.init();
-        editFare = Math.max(1, menu.contentHolder != null ? menu.contentHolder.getFare() : 1);
-        String station = menu.contentHolder != null ? menu.contentHolder.getStation() : "";
-        String ticketName = menu.contentHolder != null ? menu.contentHolder.getTicketName() : "";
+        // Keep the current field text across a resize (init re-runs); load from the BE only the first time.
+        String station = stationBox != null ? stationBox.getValue()
+                : (menu.contentHolder != null ? menu.contentHolder.getStation() : "");
+        String ticketName = ticketNameBox != null ? ticketNameBox.getValue()
+                : (menu.contentHolder != null ? menu.contentHolder.getTicketName() : "");
 
         int x = leftPos;
         int y = topPos;
