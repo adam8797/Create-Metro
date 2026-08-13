@@ -227,7 +227,7 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
             return;
         if (!(entity instanceof Player player) || player.isSpectator())
             return;
-        withBlockEntityDo(level, pos, be -> be.onPlayerWalkThrough(player));
+        withBlockEntityDo(level, pos, be -> be.onPlayerInside(player));
     }
 
     @Override
