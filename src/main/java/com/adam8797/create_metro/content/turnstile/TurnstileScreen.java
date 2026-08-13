@@ -138,7 +138,10 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
         g.drawString(font, Component.translatable("create_metro.turnstile.station"), 8, 20, TEXT, false);
 
         g.drawString(font, Component.translatable("create_metro.turnstile.fare"), 8, 50, TEXT, false);
-        g.drawCenteredString(font, Component.translatable("create_metro.turnstile.fare_amount", editFare), 34, 58, 0xFFFFFF);
+        Component fareText = editFare <= 0
+                ? Component.translatable("create_metro.turnstile.fare_ticket")
+                : Component.translatable("create_metro.turnstile.fare_amount", editFare);
+        g.drawCenteredString(font, fareText, 34, 58, 0xFFFFFF);
         g.drawString(font, Component.translatable("create_metro.turnstile.deposit_label"), 8, 92, TEXT, false);
 
         // Right-aligned checkbox labels, sitting just left of each box.

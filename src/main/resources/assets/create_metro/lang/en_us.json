@@ -4,7 +4,11 @@
   "block.create_metro.turnstile": "Turnstile",
 
   "create_metro.turnstile.station": "Station",
+  "create_metro.turnstile.fare_ticket": "Ticket",
   "create_metro.turnstile.ticket_invalid": "Ticket not valid at this station",
+  "create_metro.turnstile.ticket_hint": "Right-click with a valid ticket",
+  "create_metro.turnstile.no_ticket": "No valid ticket",
+  "create_metro.turnstile.tickets_only": "This gate only accepts tickets",
   "create_metro.turnstile.fare": "Fare",
   "create_metro.turnstile.fare_amount": "%s spurs",
   "create_metro.turnstile.deposit_label": "Deposit to",

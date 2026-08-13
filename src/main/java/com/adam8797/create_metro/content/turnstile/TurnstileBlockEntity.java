@@ -15,6 +15,8 @@ import dev.ithundxr.createnumismatics.content.backend.trust_list.TrustListContai
 import dev.ithundxr.createnumismatics.registry.NumismaticsTags;
 import dev.ithundxr.createnumismatics.util.Utils;
 import net.minecraft.ChatFormatting;
+import com.adam8797.create_metro.MetroDataComponents;
+import com.adam8797.create_metro.MetroItems;
 import com.simibubi.create.content.logistics.box.PackageItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -205,7 +207,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
                 new CenteredSideValueBoxTransform())
                 .between(0, max) // clamp stays at the configured maximum; the wrench board is capped compactly
                 .withCallback(this::onFareChanged) // keep a merged pair's fare in sync when set via the wrench
-                .withFormatter(i -> i == 0 ? "Free" : String.valueOf(i))
+                .withFormatter(i -> i == 0 ? "Ticket" : String.valueOf(i))
                 .requiresWrench();
         behaviours.add(fare);
     }
@@ -462,7 +464,8 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             Long nextManual = nextAttemptAllowed.get(mid);
             if (nextManual == null || nowManual >= nextManual) {
                 nextAttemptAllowed.put(mid, nowManual + ATTEMPT_THROTTLE);
-                player.displayClientMessage(Component.translatable("create_metro.turnstile.manual_pay_hint")
+                player.displayClientMessage(Component.translatable(isTicketOnly()
+                                ? "create_metro.turnstile.ticket_hint" : "create_metro.turnstile.manual_pay_hint")
                         .withStyle(ChatFormatting.YELLOW), true);
                 playDenySound();
             }
@@ -476,10 +479,16 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             return; // throttle repeated attempts while pressed against the gate
         nextAttemptAllowed.put(id, now + ATTEMPT_THROTTLE);
 
-        if (chargeFare(Numismatics.BANK.getAccount(player)))
+        if (isTicketOnly()) {
+            if (consumeMatchingTicketFromInventory(player))
+                grantPass(player, false);
+            else
+                denyNoTicket(player);
+        } else if (chargeFare(Numismatics.BANK.getAccount(player))) {
             grantPass(player, false);
-        else
+        } else {
             deny(player);
+        }
     }
 
     /** Manual payment from the rider's own bank account (empty-hand right-click when auto-pay is off). */
@@ -494,6 +503,13 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         }
         if (ridesFree(player)) {
             grantPassManual(player, !isEntering(player));
+            return;
+        }
+        if (isTicketOnly()) {
+            if (consumeMatchingTicketFromInventory(player))
+                grantPassManual(player, !isEntering(player));
+            else
+                denyNoTicket(player);
             return;
         }
         if (chargeFare(Numismatics.BANK.getAccount(player)))
@@ -515,8 +531,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             playDenySound(); // exit disabled
             return;
         }
-        String ticketName = ticketNameOf(ticket);
-        if (station.isBlank() || ticketName.isBlank() || !PackageItem.matchAddress(station, ticketName)) {
+        if (!ticketMatches(ticket)) {
             player.displayClientMessage(Component.translatable("create_metro.turnstile.ticket_invalid")
                     .withStyle(ChatFormatting.RED), true);
             playDenySound();
@@ -526,10 +541,45 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         grantPassManual(player, !isEntering(player));
     }
 
-    /** The ticket's anvil-assigned name, or empty if it was never renamed. */
-    private static String ticketNameOf(ItemStack ticket) {
+    /** True if the stack is a Quick Trip Ticket whose address is valid for this station. */
+    private boolean ticketMatches(ItemStack ticket) {
+        if (!ticket.is(MetroItems.QUICK_TRIP_TICKET.get()) || station.isBlank())
+            return false;
+        String addr = ticketAddressOf(ticket);
+        return !addr.isBlank() && PackageItem.matchAddress(station, addr);
+    }
+
+    /** The station address a ticket is valid for: its printed address component, else its anvil name. */
+    private static String ticketAddressOf(ItemStack ticket) {
+        String addr = ticket.get(MetroDataComponents.TICKET_ADDRESS.get());
+        if (addr != null && !addr.isBlank())
+            return addr;
         Component name = ticket.get(DataComponents.CUSTOM_NAME);
         return name != null ? name.getString() : "";
+    }
+
+    /** Ticket-only gate: consume the first matching ticket in the player's inventory; false if none. */
+    private boolean consumeMatchingTicketFromInventory(Player player) {
+        var inv = player.getInventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack s = inv.getItem(i);
+            if (!s.isEmpty() && ticketMatches(s)) {
+                s.shrink(1);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** A fare of 0 means the gate takes Quick Trip Tickets instead of spurs. */
+    public boolean isTicketOnly() {
+        return getFare() <= 0;
+    }
+
+    private void denyNoTicket(Player player) {
+        player.displayClientMessage(Component.translatable("create_metro.turnstile.no_ticket")
+                .withStyle(ChatFormatting.DARK_RED), true);
+        playDenySound();
     }
 
     /** True if the player is crossing in the gate's facing direction (an entry that should be charged). */
@@ -546,6 +596,12 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     public void payWithCard(ItemStack cardStack, Player player) {
         if (!(level instanceof ServerLevel))
             return;
+        if (isTicketOnly()) {
+            player.displayClientMessage(Component.translatable("create_metro.turnstile.tickets_only")
+                    .withStyle(ChatFormatting.RED), true);
+            playDenySound();
+            return;
+        }
         UUID accountId = CardItem.get(cardStack);
         if (accountId == null) {
             player.displayClientMessage(Component.translatable("create_metro.turnstile.card_blank")

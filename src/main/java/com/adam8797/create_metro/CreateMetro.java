@@ -45,6 +45,7 @@ public class CreateMetro {
         MetroBlockEntityTypes.register();
         MetroMenuTypes.register();
         MetroCreativeTabs.register(modEventBus);
+        MetroDataComponents.register(modEventBus);
         MetroPackets.register();
 
         MetroConfigs.register(modContainer);
