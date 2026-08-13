@@ -412,8 +412,19 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             grantPass(player, false);
             return;
         }
-        if (!autoPay)
-            return; // manual mode: walking in doesn't charge — the rider pays by card or right-click
+        if (!autoPay) {
+            // manual mode: walking in doesn't charge — nudge the rider to pay (throttled)
+            long nowManual = serverLevel.getGameTime();
+            UUID mid = player.getUUID();
+            Long nextManual = nextAttemptAllowed.get(mid);
+            if (nextManual == null || nowManual >= nextManual) {
+                nextAttemptAllowed.put(mid, nowManual + ATTEMPT_THROTTLE);
+                player.displayClientMessage(Component.translatable("create_metro.turnstile.manual_pay_hint")
+                        .withStyle(ChatFormatting.YELLOW), true);
+                playDenySound();
+            }
+            return;
+        }
 
         long now = serverLevel.getGameTime();
         UUID id = player.getUUID();

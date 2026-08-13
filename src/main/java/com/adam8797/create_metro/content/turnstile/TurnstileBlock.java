@@ -199,13 +199,6 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
         return true;
     }
 
-    @Override
-    @SuppressWarnings("deprecation")
-    public void tick(@NotNull BlockState state, @NotNull ServerLevel level, @NotNull BlockPos pos, @NotNull RandomSource random) {
-        if (state.getValue(OPEN))
-            level.setBlock(pos, state.setValue(OPEN, false), Block.UPDATE_ALL);
-    }
-
     // ------------------------------------------------------------------
     // Interaction
     // ------------------------------------------------------------------
@@ -249,12 +242,18 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
         if (!(level.getBlockEntity(pos) instanceof TurnstileBlockEntity be))
             return InteractionResult.PASS;
 
-        if (isTrusted(player, level, pos)) {
-            openConfig(player, pos, be);
-            return InteractionResult.CONSUME;
+        // Shift + empty hand opens the config GUI (for trusted players).
+        if (player.isShiftKeyDown()) {
+            if (isTrusted(player, level, pos)) {
+                openConfig(player, pos, be);
+                return InteractionResult.CONSUME;
+            }
+            be.showStatus(player);
+            return InteractionResult.SUCCESS;
         }
+        // Plain empty-hand right-click: manual-pay from your own account, else just show the status.
         if (!be.getAutoPay()) {
-            be.payFromPersonalAccount(player); // manual mode: pay from your own account
+            be.payFromPersonalAccount(player);
             return InteractionResult.CONSUME;
         }
         be.showStatus(player);

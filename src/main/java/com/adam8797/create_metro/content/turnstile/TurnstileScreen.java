@@ -27,9 +27,9 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
     public TurnstileScreen(TurnstileMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
         this.imageWidth = 176;
-        this.imageHeight = 254;
+        this.imageHeight = 224;
         this.titleLabelY = 6;
-        this.inventoryLabelY = 160;
+        this.inventoryLabelY = 130;
     }
 
     @Override
@@ -42,22 +42,24 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
 
         int x = leftPos;
         int y = topPos;
+        // Left column: fare adjust buttons (amount + card slot are drawn in renderBg/renderLabels).
         addRenderableWidget(Button.builder(Component.literal("-"), b -> adjustFare(-step()))
-                .bounds(x + 8, y + 30, 20, 20).build());
+                .bounds(x + 8, y + 42, 20, 20).build());
         addRenderableWidget(Button.builder(Component.literal("+"), b -> adjustFare(step()))
-                .bounds(x + 84, y + 30, 20, 20).build());
+                .bounds(x + 38, y + 42, 20, 20).build());
+        // Right column: the three toggles.
         addRenderableWidget(Checkbox.builder(Component.translatable("create_metro.turnstile.auto_pay"), font)
-                .pos(x + 8, y + 54)
+                .pos(x + 66, y + 20)
                 .selected(autoPay)
                 .onValueChange((cb, value) -> autoPay = value)
                 .build());
         addRenderableWidget(Checkbox.builder(Component.translatable("create_metro.turnstile.charge_trusted"), font)
-                .pos(x + 8, y + 76)
+                .pos(x + 66, y + 42)
                 .selected(chargeTrusted)
                 .onValueChange((cb, value) -> chargeTrusted = value)
                 .build());
         addRenderableWidget(Checkbox.builder(Component.translatable("create_metro.turnstile.no_exit"), font)
-                .pos(x + 8, y + 98)
+                .pos(x + 66, y + 64)
                 .selected(noExit)
                 .onValueChange((cb, value) -> noExit = value)
                 .build());
@@ -86,14 +88,14 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
         g.fill(x, y, x + 1, y + imageHeight, BORDER);
         g.fill(x + imageWidth - 1, y, x + imageWidth, y + imageHeight, BORDER);
 
-        slot(g, x + 150, y + 30);
+        slot(g, x + 8, y + 76); // deposit card slot (left column, under the fare)
         for (int i = 0; i < TurnstileMenu.ID_SLOT_COUNT; i++)
-            slot(g, x + 8 + i * 18, y + 134);
+            slot(g, x + 8 + i * 18, y + 106);
         for (int row = 0; row < 3; row++)
             for (int col = 0; col < 9; col++)
-                slot(g, x + 8 + col * 18, y + 172 + row * 18);
+                slot(g, x + 8 + col * 18, y + 142 + row * 18);
         for (int col = 0; col < 9; col++)
-            slot(g, x + 8 + col * 18, y + 230);
+            slot(g, x + 8 + col * 18, y + 200);
     }
 
     private void slot(GuiGraphics g, int itemX, int itemY) {
@@ -107,10 +109,10 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
         g.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, TEXT, false);
 
         g.drawString(font, Component.translatable("create_metro.turnstile.fare"), 8, 20, TEXT, false);
-        g.drawCenteredString(font, Component.translatable("create_metro.turnstile.fare_amount", editFare), 56, 36, 0xFFFFFF);
+        g.drawCenteredString(font, Component.translatable("create_metro.turnstile.fare_amount", editFare), 34, 31, 0xFFFFFF);
 
-        g.drawString(font, Component.translatable("create_metro.turnstile.deposit_label"), 110, 20, TEXT, false);
-        g.drawString(font, Component.translatable("create_metro.turnstile.riders_label"), 8, 122, TEXT, false);
+        g.drawString(font, Component.translatable("create_metro.turnstile.deposit_label"), 8, 66, TEXT, false);
+        g.drawString(font, Component.translatable("create_metro.turnstile.riders_label"), 8, 96, TEXT, false);
     }
 
     @Override
