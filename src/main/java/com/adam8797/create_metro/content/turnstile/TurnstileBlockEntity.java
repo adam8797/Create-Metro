@@ -596,6 +596,8 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     public void payWithCard(ItemStack cardStack, Player player) {
         if (!(level instanceof ServerLevel))
             return;
+        if (isAuthorized(player))
+            return; // already granted this pass (e.g. by auto-pay) — don't charge/swing again
         if (isTicketOnly()) {
             player.displayClientMessage(Component.translatable("create_metro.turnstile.tickets_only")
                     .withStyle(ChatFormatting.RED), true);
@@ -677,6 +679,8 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             gate.openVisual(reversed, openTicks);
             gate.notifyUpdate(); // sync authorizedUntil to clients for smooth collision prediction
         }
+        // One ding per pass, not one per gate (a merged pair would otherwise ding twice).
+        level.playSound(null, worldPosition, SoundEvents.ARROW_HIT_PLAYER, SoundSource.BLOCKS, 0.6f, 1.2f);
     }
 
     /** Swing this gate's arm open (visual only; collision is per-player via {@link #isAuthorized}). */
@@ -687,7 +691,6 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         BlockState target = state.setValue(TurnstileBlock.OPEN, true).setValue(TurnstileBlock.REVERSED, reversed);
         if (state != target)
             level.setBlock(worldPosition, target, 3);
-        level.playSound(null, worldPosition, SoundEvents.ARROW_HIT_PLAYER, SoundSource.BLOCKS, 0.6f, 1.2f);
         openUntil = level.getGameTime() + openTicks; // BE tick() swings it shut when this elapses
     }
 
