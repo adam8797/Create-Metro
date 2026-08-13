@@ -69,6 +69,9 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     private static final int PASS_TICKS = OPEN_DURATION + 20;
     /** Minimum ticks between charge attempts (and deny messages) for a given player. */
     private static final int ATTEMPT_THROTTLE = 20;
+    /** Grace after a pass ends before the same player triggers another walk-through — stops the doors
+     *  flipping to a reverse "exit" swing the instant a rider finishes crossing to the far side. */
+    private static final int PASS_GRACE = 20;
     /** Manual-pay gates stay open this long (5s) after payment, or until the rider crosses through. */
     private static final int MANUAL_OPEN_TICKS = 100;
 
@@ -122,6 +125,8 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     /** Server-only: manual-pay riders watched to close the gate once they cross to the far side; value
      *  is the signed position along the facing normal at grant time. */
     private final Map<UUID, Double> transitWatch = new HashMap<>();
+    /** Server-only: game-time until which a just-passed player's walk-throughs are ignored. */
+    private final Map<UUID, Long> passGraceUntil = new HashMap<>();
     /** Server-only: game-time at which the visual gate should swing shut. */
     private long openUntil = 0;
 
@@ -146,19 +151,27 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             return;
         long now = level.getGameTime();
 
-        // Server-only: end a manual-pay rider's pass once they've crossed to the far side, and close the
-        // visual gate when its timer elapses (or nobody is left to pass).
-        if (level instanceof ServerLevel && !transitWatch.isEmpty()) {
-            transitWatch.entrySet().removeIf(e -> {
-                Player rider = level.getPlayerByUUID(e.getKey());
-                if (rider == null || hasCrossed(e.getValue(), sideOf(rider))) {
-                    authorizedUntil.remove(e.getKey());
-                    return true;
-                }
-                return false;
-            });
-            if (authorizedUntil.isEmpty())
-                openUntil = now; // last rider through: swing shut now
+        if (level instanceof ServerLevel) {
+            // Keep a short grace ticking for everyone currently authorized, so it survives a beat past
+            // their pass and a just-crossed rider isn't re-processed as a fresh exit.
+            for (UUID id : authorizedUntil.keySet())
+                passGraceUntil.put(id, now + PASS_GRACE);
+
+            // End a manual-pay rider's pass once they've crossed to the far side, and close the visual
+            // gate when its timer elapses (or nobody is left to pass).
+            if (!transitWatch.isEmpty()) {
+                transitWatch.entrySet().removeIf(e -> {
+                    Player rider = level.getPlayerByUUID(e.getKey());
+                    if (rider == null || hasCrossed(e.getValue(), sideOf(rider))) {
+                        authorizedUntil.remove(e.getKey());
+                        return true;
+                    }
+                    return false;
+                });
+                if (authorizedUntil.isEmpty())
+                    openUntil = now; // last rider through: swing shut now
+            }
+            passGraceUntil.values().removeIf(until -> now >= until);
         }
 
         if (!authorizedUntil.isEmpty())
@@ -446,6 +459,9 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             return;
         if (isAuthorized(player))
             return; // already allowed through — barrier is empty for them
+        Long grace = passGraceUntil.get(player.getUUID());
+        if (grace != null && serverLevel.getGameTime() < grace)
+            return; // just finished a pass — let them clear the gate before re-triggering
 
         if (!isEntering(player)) {
             if (noExit)
@@ -679,8 +695,9 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             gate.openVisual(reversed, openTicks);
             gate.notifyUpdate(); // sync authorizedUntil to clients for smooth collision prediction
         }
-        // One ding per pass, not one per gate (a merged pair would otherwise ding twice).
-        level.playSound(null, worldPosition, SoundEvents.ARROW_HIT_PLAYER, SoundSource.BLOCKS, 0.6f, 1.2f);
+        // One ding per pass (not per gate), and only on entry — exiting is a free, silent trip-end.
+        if (!reversed)
+            level.playSound(null, worldPosition, SoundEvents.ARROW_HIT_PLAYER, SoundSource.BLOCKS, 0.6f, 1.2f);
     }
 
     /** Swing this gate's arm open (visual only; collision is per-player via {@link #isAuthorized}). */
