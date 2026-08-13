@@ -15,10 +15,12 @@ import dev.ithundxr.createnumismatics.content.backend.trust_list.TrustListContai
 import dev.ithundxr.createnumismatics.registry.NumismaticsTags;
 import dev.ithundxr.createnumismatics.util.Utils;
 import net.minecraft.ChatFormatting;
+import com.simibubi.create.content.logistics.box.PackageItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Vec3i;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -94,6 +96,9 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
 
     /** When true (default), walking in auto-charges; when false, riders pay by card or empty-hand click. */
     protected boolean autoPay = true;
+
+    /** Station name; a Quick Trip Ticket passes if its (anvil) name matches this (wildcards allowed). */
+    protected String station = "";
 
     /**
      * Holds the (optional) bank card whose account collected fares are deposited into.
@@ -279,16 +284,21 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         notifyUpdate();
     }
 
+    public String getStation() {
+        return station;
+    }
+
     /**
      * Apply fare + charge-trusted from the GUI, then push the WHOLE configuration (owner, fare,
      * charge-trusted, deposit card, and trusted-rider cards) to every merged partner — a double gate
      * is configured as one unit. Also clears cached free-pass state so the change takes effect at once.
      */
-    public void applyConfig(int fare, boolean chargeTrusted, boolean noExit, boolean autoPay) {
+    public void applyConfig(int fare, boolean chargeTrusted, boolean noExit, boolean autoPay, String station) {
         setFare(fare);
         this.chargeTrusted = chargeTrusted;
         this.noExit = noExit;
         this.autoPay = autoPay;
+        this.station = station == null ? "" : station.trim();
         authorizedUntil.clear();
         nextAttemptAllowed.clear();
         notifyUpdate();
@@ -318,6 +328,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         this.chargeTrusted = source.chargeTrusted;
         this.noExit = source.noExit;
         this.autoPay = source.autoPay;
+        this.station = source.station;
         setFare(source.getFare());
         cardContainer.setItem(0, source.cardContainer.getItem(0).copy());
         for (int i = 0; i < ownerListContainer.getContainerSize(); i++)
@@ -491,6 +502,36 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             deny(player);
     }
 
+    /**
+     * Right-click with a Quick Trip Ticket: if the ticket's (anvil) name matches this gate's station
+     * (wildcards via Create's package-address matcher), consume one ticket and let the player through.
+     */
+    public void payWithTicket(ItemStack ticket, Player player) {
+        if (!(level instanceof ServerLevel))
+            return;
+        if (isAuthorized(player))
+            return;
+        if (!isEntering(player) && noExit) {
+            playDenySound(); // exit disabled
+            return;
+        }
+        String ticketName = ticketNameOf(ticket);
+        if (station.isBlank() || ticketName.isBlank() || !PackageItem.matchAddress(station, ticketName)) {
+            player.displayClientMessage(Component.translatable("create_metro.turnstile.ticket_invalid")
+                    .withStyle(ChatFormatting.RED), true);
+            playDenySound();
+            return;
+        }
+        ticket.shrink(1); // single-use
+        grantPassManual(player, !isEntering(player));
+    }
+
+    /** The ticket's anvil-assigned name, or empty if it was never renamed. */
+    private static String ticketNameOf(ItemStack ticket) {
+        Component name = ticket.get(DataComponents.CUSTOM_NAME);
+        return name != null ? name.getString() : "";
+    }
+
     /** True if the player is crossing in the gate's facing direction (an entry that should be charged). */
     private boolean isEntering(Player player) {
         Direction facing = getBlockState().getValue(TurnstileBlock.HORIZONTAL_FACING);
@@ -644,6 +685,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         if (owner != null)
             tag.putUUID("Owner", owner);
         tag.putString("OwnerName", ownerName);
+        tag.putString("Station", station);
         tag.putBoolean("ChargeTrusted", chargeTrusted);
         tag.putBoolean("NoExit", noExit);
         tag.putBoolean("AutoPay", autoPay);
@@ -672,6 +714,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         super.read(tag, registries, clientPacket);
         owner = tag.hasUUID("Owner") ? tag.getUUID("Owner") : null;
         ownerName = tag.getString("OwnerName");
+        station = tag.getString("Station");
         chargeTrusted = tag.getBoolean("ChargeTrusted");
         noExit = tag.getBoolean("NoExit");
         autoPay = !tag.contains("AutoPay") || tag.getBoolean("AutoPay"); // default on for pre-existing gates

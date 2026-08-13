@@ -5,10 +5,12 @@ import net.createmod.catnip.platform.CatnipServices;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+import org.lwjgl.glfw.GLFW;
 
 public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
 
@@ -20,21 +22,22 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
     private static final int TEXT = 0x404040;
 
     // Checkbox rows (local Y). Boxes sit at the right edge; labels are drawn to their left.
-    private static final int CB_AUTO_Y = 20;
-    private static final int CB_CHARGE_Y = 42;
-    private static final int CB_NOEXIT_Y = 64;
+    private static final int CB_AUTO_Y = 48;
+    private static final int CB_CHARGE_Y = 69;
+    private static final int CB_NOEXIT_Y = 90;
 
     private int editFare;
     private boolean chargeTrusted;
     private boolean noExit;
     private boolean autoPay;
+    private EditBox stationBox;
 
     public TurnstileScreen(TurnstileMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
         this.imageWidth = 176;
-        this.imageHeight = 256;
+        this.imageHeight = 280;
         this.titleLabelY = 6;
-        this.inventoryLabelY = 162;
+        this.inventoryLabelY = 186;
     }
 
     @Override
@@ -47,11 +50,19 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
 
         int x = leftPos;
         int y = topPos;
+
+        // Station name field (top).
+        String station = menu.contentHolder != null ? menu.contentHolder.getStation() : "";
+        stationBox = new EditBox(font, x + 8, y + 30, 160, 14, Component.translatable("create_metro.turnstile.station"));
+        stationBox.setMaxLength(64);
+        stationBox.setValue(station);
+        addRenderableWidget(stationBox);
+
         // Left column: fare adjust buttons (amount + card slot are drawn in renderBg/renderLabels).
         addRenderableWidget(Button.builder(Component.literal("-"), b -> adjustFare(-step()))
-                .bounds(x + 8, y + 42, 20, 20).build());
+                .bounds(x + 8, y + 69, 20, 20).build());
         addRenderableWidget(Button.builder(Component.literal("+"), b -> adjustFare(step()))
-                .bounds(x + 38, y + 42, 20, 20).build());
+                .bounds(x + 38, y + 69, 20, 20).build());
 
         // Right column: box-only checkboxes aligned to the right edge (labels drawn in renderLabels).
         int boxX = x + imageWidth - 8 - Checkbox.getBoxSize(font);
@@ -75,6 +86,18 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
     }
 
     @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+            onClose();
+            return true;
+        }
+        // While typing in the station field, don't let the inventory key close the screen.
+        if (stationBox != null && stationBox.isFocused() && stationBox.canConsumeInput())
+            return stationBox.keyPressed(keyCode, scanCode, modifiers) || stationBox.canConsumeInput();
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
     protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         int x = leftPos;
         int y = topPos;
@@ -86,16 +109,16 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
         g.fill(x, y, x + 1, y + imageHeight, BORDER);
         g.fill(x + imageWidth - 1, y, x + imageWidth, y + imageHeight, BORDER);
 
-        slot(g, x + 8, y + 76); // deposit card slot (left column, under the fare)
+        slot(g, x + 8, y + 102); // deposit card slot (left column)
         for (int i = 0; i < TurnstileMenu.OWNER_SLOT_COUNT; i++)
-            slot(g, x + 8 + i * 18, y + 108);
+            slot(g, x + 8 + i * 18, y + 132);
         for (int i = 0; i < TurnstileMenu.RIDER_SLOT_COUNT; i++)
-            slot(g, x + 8 + i * 18, y + 140);
+            slot(g, x + 8 + i * 18, y + 164);
         for (int row = 0; row < 3; row++)
             for (int col = 0; col < 9; col++)
-                slot(g, x + 8 + col * 18, y + 174 + row * 18);
+                slot(g, x + 8 + col * 18, y + 198 + row * 18);
         for (int col = 0; col < 9; col++)
-            slot(g, x + 8 + col * 18, y + 232);
+            slot(g, x + 8 + col * 18, y + 256);
     }
 
     private void slot(GuiGraphics g, int itemX, int itemY) {
@@ -112,9 +135,11 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
             g.drawString(font, ownerName, imageWidth - 8 - font.width(ownerName), titleLabelY, 0xFFFFFF, false);
         g.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, TEXT, false);
 
-        g.drawString(font, Component.translatable("create_metro.turnstile.fare"), 8, 20, TEXT, false);
-        g.drawCenteredString(font, Component.translatable("create_metro.turnstile.fare_amount", editFare), 34, 31, 0xFFFFFF);
-        g.drawString(font, Component.translatable("create_metro.turnstile.deposit_label"), 8, 66, TEXT, false);
+        g.drawString(font, Component.translatable("create_metro.turnstile.station"), 8, 20, TEXT, false);
+
+        g.drawString(font, Component.translatable("create_metro.turnstile.fare"), 8, 50, TEXT, false);
+        g.drawCenteredString(font, Component.translatable("create_metro.turnstile.fare_amount", editFare), 34, 58, 0xFFFFFF);
+        g.drawString(font, Component.translatable("create_metro.turnstile.deposit_label"), 8, 92, TEXT, false);
 
         // Right-aligned checkbox labels, sitting just left of each box.
         int boxSize = Checkbox.getBoxSize(font);
@@ -124,8 +149,8 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
         drawRight(g, Component.translatable("create_metro.turnstile.charge_trusted"), labelRight, CB_CHARGE_Y + textDy);
         drawRight(g, Component.translatable("create_metro.turnstile.no_exit"), labelRight, CB_NOEXIT_Y + textDy);
 
-        g.drawString(font, Component.translatable("create_metro.turnstile.owners_label"), 8, 98, TEXT, false);
-        g.drawString(font, Component.translatable("create_metro.turnstile.riders_label"), 8, 130, TEXT, false);
+        g.drawString(font, Component.translatable("create_metro.turnstile.owners_label"), 8, 122, TEXT, false);
+        g.drawString(font, Component.translatable("create_metro.turnstile.riders_label"), 8, 154, TEXT, false);
     }
 
     private void drawRight(GuiGraphics g, Component text, int rightX, int y) {
@@ -143,7 +168,8 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
     public void removed() {
         super.removed();
         if (menu.contentHolder != null)
-            CatnipServices.NETWORK.sendToServer(
-                    new TurnstileConfigurationPacket(menu.contentHolder.getBlockPos(), editFare, chargeTrusted, noExit, autoPay));
+            CatnipServices.NETWORK.sendToServer(new TurnstileConfigurationPacket(
+                    menu.contentHolder.getBlockPos(), editFare, chargeTrusted, noExit, autoPay,
+                    stationBox != null ? stationBox.getValue() : ""));
     }
 }

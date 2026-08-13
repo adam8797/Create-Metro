@@ -47,12 +47,12 @@ public class TurnstileMenu extends MenuBase<TurnstileBlockEntity> {
 
     @Override
     protected void addSlots() {
-        addSlot(new CardSlot.BoundCardSlot(contentHolder.cardContainer, 0, 8, 76));
+        addSlot(new CardSlot.BoundCardSlot(contentHolder.cardContainer, 0, 8, 102));
         for (int i = 0; i < OWNER_SLOT_COUNT; i++)
-            addSlot(new IDCardSlot.BoundIDCardSlot(contentHolder.ownerListContainer, i, 8 + i * 18, 108));
+            addSlot(new IDCardSlot.BoundIDCardSlot(contentHolder.ownerListContainer, i, 8 + i * 18, 132));
         for (int i = 0; i < RIDER_SLOT_COUNT; i++)
-            addSlot(new IDCardSlot.BoundIDCardSlot(contentHolder.trustListContainer, i, 8 + i * 18, 140));
-        addPlayerSlots(8, 174);
+            addSlot(new IDCardSlot.BoundIDCardSlot(contentHolder.trustListContainer, i, 8 + i * 18, 164));
+        addPlayerSlots(8, 198);
     }
 
     @Override

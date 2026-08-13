@@ -23,7 +23,8 @@ public class MetroCreativeTabs {
     private static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, CreateMetro.MOD_ID);
 
     public static final List<ItemProviderEntry<?, ?>> ITEMS = List.of(
-            MetroBlocks.TURNSTILE
+            MetroBlocks.TURNSTILE,
+            MetroItems.QUICK_TRIP_TICKET
     );
 
 

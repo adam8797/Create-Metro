@@ -1,6 +1,7 @@
 package com.adam8797.create_metro.content.turnstile;
 
 import com.adam8797.create_metro.MetroBlockEntityTypes;
+import com.adam8797.create_metro.MetroItems;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;
 import dev.ithundxr.createnumismatics.content.backend.TrustedBlock;
@@ -227,6 +228,15 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
                 return ItemInteractionResult.SUCCESS;
             if (level.getBlockEntity(pos) instanceof TurnstileBlockEntity be)
                 be.payWithCard(stack, player);
+            return ItemInteractionResult.CONSUME;
+        }
+
+        // A Quick Trip Ticket passes if its name matches this gate's station.
+        if (stack.is(MetroItems.QUICK_TRIP_TICKET.get())) {
+            if (level.isClientSide)
+                return ItemInteractionResult.SUCCESS;
+            if (level.getBlockEntity(pos) instanceof TurnstileBlockEntity be)
+                be.payWithTicket(stack, player);
             return ItemInteractionResult.CONSUME;
         }
 
