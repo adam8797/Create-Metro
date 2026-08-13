@@ -1,1 +1,41 @@
-{ "parent": "create_metro:block/ticket_printer" }
+{
+  "parent": "create_metro:block/ticket_printer",
+  "comment": "Two-tall block model, so the inventory/held renders use a reduced scale to fit the slot (like a normal block item). Tune gui.scale + gui.translation[1] to taste.",
+  "display": {
+    "gui": {
+      "rotation": [30, 45, 0],
+      "translation": [0, -3, 0],
+      "scale": [0.4, 0.4, 0.4]
+    },
+    "ground": {
+      "rotation": [0, 0, 0],
+      "translation": [0, 2, 0],
+      "scale": [0.2, 0.2, 0.2]
+    },
+    "fixed": {
+      "rotation": [0, 0, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "thirdperson_righthand": {
+      "rotation": [75, 45, 0],
+      "translation": [0, 2, 0],
+      "scale": [0.22, 0.22, 0.22]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [75, 45, 0],
+      "translation": [0, 2, 0],
+      "scale": [0.22, 0.22, 0.22]
+    },
+    "firstperson_righthand": {
+      "rotation": [0, 45, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.24, 0.24, 0.24]
+    },
+    "firstperson_lefthand": {
+      "rotation": [0, 45, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.24, 0.24, 0.24]
+    }
+  }
+}

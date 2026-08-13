@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        },
+        {
+          "condition": "minecraft:block_state_property",
+          "block": "create_metro:ticket_printer",
+          "properties": {
+            "half": "lower"
+          }
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "create_metro:ticket_printer"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "create_metro:blocks/ticket_printer"
+}

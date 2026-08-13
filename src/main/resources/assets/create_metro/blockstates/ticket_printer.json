@@ -1,3 +1,6 @@
 {
-  "variants": { "": { "model": "create_metro:block/ticket_printer" } }
+  "variants": {
+    "half=lower": { "model": "create_metro:block/ticket_printer" },
+    "half=upper": { "model": "create_metro:block/ticket_printer_upper" }
+  }
 }

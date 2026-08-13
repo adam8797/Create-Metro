@@ -38,6 +38,8 @@ public class MetroBlocks {
             .properties(p -> p.sound(SoundType.NETHERITE_BLOCK))
             .properties(p -> p.strength(1.5F, 6.0F))
             .properties(BlockBehaviour.Properties::noOcclusion)
+            // The glowing indicator sits on the upper half, so only that half emits light.
+            .properties(p -> p.lightLevel(TicketPrinterBlock::lightEmission))
             .transform(pickaxeOnly())
             .tag(AllBlockTags.NON_MOVABLE.tag)
             // Blockstate + model are hand-authored placeholders (GeckoLib animation to come); no-op
