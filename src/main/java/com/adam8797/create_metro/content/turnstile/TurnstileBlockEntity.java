@@ -70,11 +70,18 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
 
     @Nullable
     protected UUID owner;
+    /** Display name of the placer, synced to clients for the GUI title. */
+    protected String ownerName = "";
 
-    /** Players (besides the owner) permitted to pass free. Derived from {@link #trustListContainer}. */
+    /** Co-owners (besides the placer) permitted to configure the gate. Derived from {@link #ownerListContainer}. */
+    protected final List<UUID> ownerList = new ArrayList<>();
+    /** Holds the ID cards of co-owners (edited via the GUI); rebuilds {@link #ownerList} on change. */
+    public final TrustListContainer ownerListContainer = new TrustListContainer(ownerList, this::setChanged);
+
+    /** Players permitted to pass free (no config rights). Derived from {@link #trustListContainer}. */
     protected final List<UUID> trustList = new ArrayList<>();
 
-    /** Holds the ID cards of trusted riders (edited via the GUI); rebuilds {@link #trustList} on change. */
+    /** Holds the ID cards of free-pass riders (edited via the GUI); rebuilds {@link #trustList} on change. */
     public final TrustListContainer trustListContainer = new TrustListContainer(trustList, this::setChanged);
 
     protected ScrollValueBehaviour fare;
@@ -229,9 +236,20 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         setChanged();
     }
 
+    /** Record the placer and their display name (for the GUI title). */
+    public void setOwner(Player placer) {
+        this.owner = placer.getUUID();
+        this.ownerName = placer.getGameProfile().getName();
+        notifyUpdate();
+    }
+
     @Nullable
     public UUID getOwner() {
         return owner;
+    }
+
+    public String getOwnerName() {
+        return ownerName;
     }
 
     public boolean getChargeTrusted() {
@@ -296,11 +314,15 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     /** Copy the full configuration of {@code source} into this gate (cards are copied, not moved). */
     public void copyConfigFrom(TurnstileBlockEntity source) {
         this.owner = source.owner;
+        this.ownerName = source.ownerName;
         this.chargeTrusted = source.chargeTrusted;
         this.noExit = source.noExit;
         this.autoPay = source.autoPay;
         setFare(source.getFare());
         cardContainer.setItem(0, source.cardContainer.getItem(0).copy());
+        for (int i = 0; i < ownerListContainer.getContainerSize(); i++)
+            ownerListContainer.setItem(i, source.ownerListContainer.getItem(i).copy());
+        ownerListContainer.setChanged(); // rebuild the derived ownerList
         for (int i = 0; i < trustListContainer.getContainerSize(); i++)
             trustListContainer.setItem(i, source.trustListContainer.getItem(i).copy());
         trustListContainer.setChanged(); // rebuild the derived trustList
@@ -338,12 +360,22 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             queue.add(be);
     }
 
-    @Override
-    public boolean isTrustedInternal(Player player) {
-        if (owner == null || owner.equals(player.getUUID()) || trustList.contains(player.getUUID()))
+    /** Owners (the placer plus co-owner ID cards) may configure the gate; free-pass riders may not. */
+    public boolean isOwner(Player player) {
+        if (owner == null || owner.equals(player.getUUID()) || ownerList.contains(player.getUUID()))
             return true;
         // Dev convenience (mirrors Numismatics): golden boots make you staff for quick self-testing.
         return Utils.isDevEnv() && player.getItemBySlot(EquipmentSlot.FEET).is(Items.GOLDEN_BOOTS);
+    }
+
+    @Override
+    public boolean isTrustedInternal(Player player) {
+        return isOwner(player);
+    }
+
+    /** True if the player rides for free: free-pass riders always, owners unless "charge owners" is set. */
+    private boolean ridesFree(Player player) {
+        return trustList.contains(player.getUUID()) || (!chargeTrusted && isOwner(player));
     }
 
     // ------------------------------------------------------------------
@@ -408,7 +440,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             grantPass(player, true); // free egress (trip ended); swing against the facing
             return;
         }
-        if (!chargeTrusted && isTrusted(player)) {
+        if (ridesFree(player)) {
             grantPass(player, false);
             return;
         }
@@ -449,7 +481,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
             playDenySound(); // exit disabled
             return;
         }
-        if (!chargeTrusted && isTrusted(player)) {
+        if (ridesFree(player)) {
             grantPassManual(player, !isEntering(player));
             return;
         }
@@ -611,11 +643,14 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
         super.write(tag, registries, clientPacket);
         if (owner != null)
             tag.putUUID("Owner", owner);
+        tag.putString("OwnerName", ownerName);
         tag.putBoolean("ChargeTrusted", chargeTrusted);
         tag.putBoolean("NoExit", noExit);
         tag.putBoolean("AutoPay", autoPay);
         if (!cardContainer.getItem(0).isEmpty())
             tag.put("Card", cardContainer.getItem(0).save(registries));
+        if (!ownerListContainer.isEmpty())
+            tag.put("OwnerList", ownerListContainer.save(new CompoundTag(), registries));
         if (!trustListContainer.isEmpty())
             tag.put("TrustList", trustListContainer.save(new CompoundTag(), registries));
 
@@ -636,6 +671,7 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
     protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
         super.read(tag, registries, clientPacket);
         owner = tag.hasUUID("Owner") ? tag.getUUID("Owner") : null;
+        ownerName = tag.getString("OwnerName");
         chargeTrusted = tag.getBoolean("ChargeTrusted");
         noExit = tag.getBoolean("NoExit");
         autoPay = !tag.contains("AutoPay") || tag.getBoolean("AutoPay"); // default on for pre-existing gates
@@ -644,6 +680,11 @@ public class TurnstileBlockEntity extends SmartBlockEntity implements Trusted, M
                 ? ItemStack.parseOptional(registries, tag.getCompound("Card"))
                 : ItemStack.EMPTY;
         cardContainer.setItem(0, card);
+
+        ownerList.clear();
+        ownerListContainer.clearContent();
+        if (tag.contains("OwnerList", Tag.TAG_COMPOUND))
+            ownerListContainer.load(tag.getCompound("OwnerList"), registries);
 
         trustList.clear();
         trustListContainer.clearContent();

@@ -19,6 +19,11 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
     private static final int SLOT_BORDER = 0xFF373737;
     private static final int TEXT = 0x404040;
 
+    // Checkbox rows (local Y). Boxes sit at the right edge; labels are drawn to their left.
+    private static final int CB_AUTO_Y = 20;
+    private static final int CB_CHARGE_Y = 42;
+    private static final int CB_NOEXIT_Y = 64;
+
     private int editFare;
     private boolean chargeTrusted;
     private boolean noExit;
@@ -27,9 +32,9 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
     public TurnstileScreen(TurnstileMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
         this.imageWidth = 176;
-        this.imageHeight = 224;
+        this.imageHeight = 256;
         this.titleLabelY = 6;
-        this.inventoryLabelY = 130;
+        this.inventoryLabelY = 162;
     }
 
     @Override
@@ -47,22 +52,15 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
                 .bounds(x + 8, y + 42, 20, 20).build());
         addRenderableWidget(Button.builder(Component.literal("+"), b -> adjustFare(step()))
                 .bounds(x + 38, y + 42, 20, 20).build());
-        // Right column: the three toggles.
-        addRenderableWidget(Checkbox.builder(Component.translatable("create_metro.turnstile.auto_pay"), font)
-                .pos(x + 66, y + 20)
-                .selected(autoPay)
-                .onValueChange((cb, value) -> autoPay = value)
-                .build());
-        addRenderableWidget(Checkbox.builder(Component.translatable("create_metro.turnstile.charge_trusted"), font)
-                .pos(x + 66, y + 42)
-                .selected(chargeTrusted)
-                .onValueChange((cb, value) -> chargeTrusted = value)
-                .build());
-        addRenderableWidget(Checkbox.builder(Component.translatable("create_metro.turnstile.no_exit"), font)
-                .pos(x + 66, y + 64)
-                .selected(noExit)
-                .onValueChange((cb, value) -> noExit = value)
-                .build());
+
+        // Right column: box-only checkboxes aligned to the right edge (labels drawn in renderLabels).
+        int boxX = x + imageWidth - 8 - Checkbox.getBoxSize(font);
+        addRenderableWidget(Checkbox.builder(Component.empty(), font)
+                .pos(boxX, y + CB_AUTO_Y).selected(autoPay).onValueChange((cb, v) -> autoPay = v).build());
+        addRenderableWidget(Checkbox.builder(Component.empty(), font)
+                .pos(boxX, y + CB_CHARGE_Y).selected(chargeTrusted).onValueChange((cb, v) -> chargeTrusted = v).build());
+        addRenderableWidget(Checkbox.builder(Component.empty(), font)
+                .pos(boxX, y + CB_NOEXIT_Y).selected(noExit).onValueChange((cb, v) -> noExit = v).build());
     }
 
     private static int step() {
@@ -89,13 +87,15 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
         g.fill(x + imageWidth - 1, y, x + imageWidth, y + imageHeight, BORDER);
 
         slot(g, x + 8, y + 76); // deposit card slot (left column, under the fare)
-        for (int i = 0; i < TurnstileMenu.ID_SLOT_COUNT; i++)
-            slot(g, x + 8 + i * 18, y + 106);
+        for (int i = 0; i < TurnstileMenu.OWNER_SLOT_COUNT; i++)
+            slot(g, x + 8 + i * 18, y + 108);
+        for (int i = 0; i < TurnstileMenu.RIDER_SLOT_COUNT; i++)
+            slot(g, x + 8 + i * 18, y + 140);
         for (int row = 0; row < 3; row++)
             for (int col = 0; col < 9; col++)
-                slot(g, x + 8 + col * 18, y + 142 + row * 18);
+                slot(g, x + 8 + col * 18, y + 174 + row * 18);
         for (int col = 0; col < 9; col++)
-            slot(g, x + 8 + col * 18, y + 200);
+            slot(g, x + 8 + col * 18, y + 232);
     }
 
     private void slot(GuiGraphics g, int itemX, int itemY) {
@@ -106,13 +106,30 @@ public class TurnstileScreen extends AbstractContainerScreen<TurnstileMenu> {
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
         g.drawString(font, title, titleLabelX, titleLabelY, 0xFFFFFF, false);
+        // Owner (placer) name on the right of the title bar.
+        String ownerName = menu.contentHolder != null ? menu.contentHolder.getOwnerName() : "";
+        if (ownerName != null && !ownerName.isEmpty())
+            g.drawString(font, ownerName, imageWidth - 8 - font.width(ownerName), titleLabelY, 0xFFFFFF, false);
         g.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, TEXT, false);
 
         g.drawString(font, Component.translatable("create_metro.turnstile.fare"), 8, 20, TEXT, false);
         g.drawCenteredString(font, Component.translatable("create_metro.turnstile.fare_amount", editFare), 34, 31, 0xFFFFFF);
-
         g.drawString(font, Component.translatable("create_metro.turnstile.deposit_label"), 8, 66, TEXT, false);
-        g.drawString(font, Component.translatable("create_metro.turnstile.riders_label"), 8, 96, TEXT, false);
+
+        // Right-aligned checkbox labels, sitting just left of each box.
+        int boxSize = Checkbox.getBoxSize(font);
+        int labelRight = imageWidth - 8 - boxSize - 4;
+        int textDy = Math.max(0, (boxSize - font.lineHeight) / 2);
+        drawRight(g, Component.translatable("create_metro.turnstile.auto_pay"), labelRight, CB_AUTO_Y + textDy);
+        drawRight(g, Component.translatable("create_metro.turnstile.charge_trusted"), labelRight, CB_CHARGE_Y + textDy);
+        drawRight(g, Component.translatable("create_metro.turnstile.no_exit"), labelRight, CB_NOEXIT_Y + textDy);
+
+        g.drawString(font, Component.translatable("create_metro.turnstile.owners_label"), 8, 98, TEXT, false);
+        g.drawString(font, Component.translatable("create_metro.turnstile.riders_label"), 8, 130, TEXT, false);
+    }
+
+    private void drawRight(GuiGraphics g, Component text, int rightX, int y) {
+        g.drawString(font, text, rightX - font.width(text), y, TEXT, false);
     }
 
     @Override

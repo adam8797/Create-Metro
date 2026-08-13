@@ -128,7 +128,7 @@ public class TurnstileBlock extends Block implements IWrenchable, IBE<TurnstileB
         super.setPlacedBy(level, pos, state, placer, stack);
         if (level.getBlockEntity(pos) instanceof TurnstileBlockEntity be) {
             if (placer instanceof Player player)
-                be.setOwner(player.getUUID());
+                be.setOwner(player);
             be.initFromConfig();
         }
         // Greedily merge with same-facing neighbours, then adopt the group's shared config.

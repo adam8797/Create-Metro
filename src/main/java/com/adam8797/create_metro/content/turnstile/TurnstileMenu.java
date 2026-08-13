@@ -18,9 +18,11 @@ import org.jetbrains.annotations.NotNull;
 public class TurnstileMenu extends MenuBase<TurnstileBlockEntity> {
 
     public static final int CARD_SLOT = 0;
-    public static final int ID_SLOT_START = 1;
-    public static final int ID_SLOT_COUNT = 6;
-    public static final int PLAYER_INV_START = ID_SLOT_START + ID_SLOT_COUNT; // 7
+    public static final int OWNER_SLOT_START = 1;
+    public static final int OWNER_SLOT_COUNT = 9;
+    public static final int RIDER_SLOT_START = OWNER_SLOT_START + OWNER_SLOT_COUNT; // 10
+    public static final int RIDER_SLOT_COUNT = 9;
+    public static final int PLAYER_INV_START = RIDER_SLOT_START + RIDER_SLOT_COUNT; // 19
     public static final int PLAYER_INV_END = PLAYER_INV_START + 36;
 
     public TurnstileMenu(MenuType<?> type, int id, Inventory inv, RegistryFriendlyByteBuf extraData) {
@@ -46,9 +48,11 @@ public class TurnstileMenu extends MenuBase<TurnstileBlockEntity> {
     @Override
     protected void addSlots() {
         addSlot(new CardSlot.BoundCardSlot(contentHolder.cardContainer, 0, 8, 76));
-        for (int i = 0; i < ID_SLOT_COUNT; i++)
-            addSlot(new IDCardSlot.BoundIDCardSlot(contentHolder.trustListContainer, i, 8 + i * 18, 106));
-        addPlayerSlots(8, 142);
+        for (int i = 0; i < OWNER_SLOT_COUNT; i++)
+            addSlot(new IDCardSlot.BoundIDCardSlot(contentHolder.ownerListContainer, i, 8 + i * 18, 108));
+        for (int i = 0; i < RIDER_SLOT_COUNT; i++)
+            addSlot(new IDCardSlot.BoundIDCardSlot(contentHolder.trustListContainer, i, 8 + i * 18, 140));
+        addPlayerSlots(8, 174);
     }
 
     @Override
@@ -69,7 +73,8 @@ public class TurnstileMenu extends MenuBase<TurnstileBlockEntity> {
             if (!moveItemStackTo(stack, CARD_SLOT, CARD_SLOT + 1, false))
                 return ItemStack.EMPTY;
         } else if (NumismaticsTags.AllItemTags.ID_CARDS.matches(stack)) {
-            if (!moveItemStackTo(stack, ID_SLOT_START, PLAYER_INV_START, false))
+            // Fill the owner slots first, then the free-pass rider slots.
+            if (!moveItemStackTo(stack, OWNER_SLOT_START, PLAYER_INV_START, false))
                 return ItemStack.EMPTY;
         } else {
             return ItemStack.EMPTY;
