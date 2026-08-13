@@ -68,7 +68,7 @@ public class TicketPrinterBlockEntity extends SmartBlockEntity implements Truste
         }
     };
 
-    protected int fare = 0;
+    protected int fare = 1; // a printer always charges (min 1); never the turnstile's 0 = "Ticket"
     /** Address printed onto tickets (what turnstiles match against; wildcards allowed). */
     protected String station = "";
     /** Display name printed onto tickets; falls back to the station address when blank. */
@@ -114,7 +114,7 @@ public class TicketPrinterBlockEntity extends SmartBlockEntity implements Truste
 
     public void applyConfig(int fare, String station, String ticketName) {
         int max = Math.max(1, MetroServerConfig.MaxTurnstileFare.get());
-        this.fare = Math.max(0, Math.min(max, fare));
+        this.fare = Math.max(1, Math.min(max, fare));
         this.station = station == null ? "" : station.trim();
         this.ticketName = ticketName == null ? "" : ticketName.trim();
         notifyUpdate();
@@ -260,7 +260,7 @@ public class TicketPrinterBlockEntity extends SmartBlockEntity implements Truste
         super.read(tag, registries, clientPacket);
         owner = tag.hasUUID("Owner") ? tag.getUUID("Owner") : null;
         ownerName = tag.getString("OwnerName");
-        fare = tag.getInt("Fare");
+        fare = Math.max(1, tag.getInt("Fare"));
         station = tag.getString("Station");
         ticketName = tag.getString("TicketName");
 

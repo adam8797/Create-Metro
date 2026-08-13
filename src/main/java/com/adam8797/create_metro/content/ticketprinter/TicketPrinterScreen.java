@@ -35,7 +35,7 @@ public class TicketPrinterScreen extends AbstractContainerScreen<TicketPrinterMe
     @Override
     protected void init() {
         super.init();
-        editFare = menu.contentHolder != null ? menu.contentHolder.getFare() : 0;
+        editFare = Math.max(1, menu.contentHolder != null ? menu.contentHolder.getFare() : 1);
         String station = menu.contentHolder != null ? menu.contentHolder.getStation() : "";
         String ticketName = menu.contentHolder != null ? menu.contentHolder.getTicketName() : "";
 
@@ -66,7 +66,7 @@ public class TicketPrinterScreen extends AbstractContainerScreen<TicketPrinterMe
 
     private void adjustFare(int delta) {
         int max = Math.max(1, MetroServerConfig.MaxTurnstileFare.get());
-        editFare = Math.max(0, Math.min(max, editFare + delta));
+        editFare = Math.max(1, Math.min(max, editFare + delta)); // printer fare is never 0
     }
 
     @Override
@@ -120,10 +120,7 @@ public class TicketPrinterScreen extends AbstractContainerScreen<TicketPrinterMe
         g.drawString(font, Component.translatable("create_metro.ticket_printer.ticket_name"), 8, 48, TEXT, false);
 
         g.drawString(font, Component.translatable("create_metro.turnstile.fare"), 8, 78, TEXT, false);
-        Component fareText = editFare <= 0
-                ? Component.translatable("create_metro.turnstile.fare_ticket")
-                : Component.translatable("create_metro.turnstile.fare_amount", editFare);
-        g.drawCenteredString(font, fareText, 34, 89, 0xFFFFFF);
+        g.drawCenteredString(font, Component.translatable("create_metro.turnstile.fare_amount", editFare), 34, 89, 0xFFFFFF);
 
         g.drawString(font, Component.translatable("create_metro.turnstile.deposit_label"), 110, 78, TEXT, false);
         g.drawString(font, Component.translatable("create_metro.ticket_printer.owners_label"), 8, 124, TEXT, false);
